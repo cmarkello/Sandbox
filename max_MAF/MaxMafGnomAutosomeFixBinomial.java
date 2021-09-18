@@ -1,3 +1,4 @@
+import java.awt.Frame;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -7,6 +8,10 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 
 public class MaxMafGnomAutosomeFixBinomial {
     
@@ -48,13 +53,14 @@ public class MaxMafGnomAutosomeFixBinomial {
 
     // ///////////////////////////////////////////// main program //////////////////////////////////////////////////////////////////////////////////////////////
     public static void main(String[] args) throws IOException {
-        String arg = args[0];
-        
-        File tempFile = new File(arg);
+        JFileChooser browseTo = new JFileChooser();
+        JOptionPane.showMessageDialog(new Frame("Input prompt"), "Please select an input GnomAD Master file to add MAF fields too.");               
+        browseTo.showOpenDialog(new JPanel());
+        File tempFile = browseTo.getSelectedFile();
         
         BufferedReader exacReader = new BufferedReader(new FileReader(tempFile));
-        PrintWriter writer = new PrintWriter(tempFile.getName().substring(0, tempFile.getName().indexOf(".")) + "_MAF.txt");
-        
+        PrintWriter writer = new PrintWriter(tempFile.getParent() + "\\" + tempFile.getName().substring(0, tempFile.getName().indexOf(".")) + "_MAF.txt");
+
         //exacReader.readLine();                            // optional skips a line if ##headder is present. not needed if first line is headder
         String curLine = exacReader.readLine();             //read a new line in with pop data for that variant allele
         String[] curLineSplit = curLine.split("\t");            // splits the input line into separate variables
@@ -127,6 +133,7 @@ public class MaxMafGnomAutosomeFixBinomial {
         
         writer.close();
         exacReader.close();
+        JOptionPane.showMessageDialog(new JPanel(), "Completed");
         System.gc();
         System.exit(0);
     }
