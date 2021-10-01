@@ -44,9 +44,9 @@ for SAMPLE_NAME in "${SAMPLE_NAMES[@]}" ; do
     SEQ_DICT="GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.compact_decoys.dict"
     XG_IDX="-x snp1kg_decoys.xg"
     GBWT_IDX="-H snp1kg_decoys.gbwt"
-    MIN_IDX="-m 1000GPlons_hs38d1_filter.sampled.64.min"
-    GG_IDX="-g 1000GPlons_hs38d1_filter.sampled.64.gg"
-    DIST_IDX="-d 1000GPlons_hs38d1_filter.dist"
+    MIN_IDX="-m snp1kg_decoys.min"
+    GG_IDX="-g snp1kg_decoys.gg"
+    DIST_IDX="-d snp1kg_decoys.dist"
     FAST_PARAM=""
     if [[ ${SAMPLE_NAME} == *"HG002"* ]]; then
         wget_download https://storage.googleapis.com/cmarkell-vg-wdl-dev/test_input_reads/HG002.novaseq.pcr-free.35x.R1.fastq.gz "${WORKDIR}/${SAMPLE_NAME}.R1.fastq.gz"

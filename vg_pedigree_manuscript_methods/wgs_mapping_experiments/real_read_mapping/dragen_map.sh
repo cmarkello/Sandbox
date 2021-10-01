@@ -72,7 +72,7 @@ for SAMPLE_NAME in "${SAMPLE_NAMES[@]}" ; do
       -2 "${SAMPLE_NAME}.R2.fastq.gz" \
       --RGID 1 \
       --RGSM ${SAMPLE_NAME} \
-      --verbose --bin_memory=50000000000 --enable-map-align true --enable-variant-caller true \
+      --verbose --bin_memory=50000000000 --enable-map-align true --enable-variant-caller false \
       --pair-by-name=true \
       --enable-map-align-output=true \
       --intermediate-results-dir ${WORKDIR}/tmp \
