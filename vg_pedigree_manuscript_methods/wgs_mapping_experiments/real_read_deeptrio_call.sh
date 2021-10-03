@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# real_read_deepvariant_call.sh: indel realign input BAMs and run the DeepVariant Genotyper
+# real_read_deeptrio_call.sh: indel realign input BAMs and run the DeepTrio Genotyper
 
 set -ex
 set -o pipefail
@@ -50,20 +50,11 @@ copy ${BAM_FILE_MATERNAL} "${WORKDIR}/${INPUT_MATERNAL_BAM}"
 copy ${BAM_FILE_PATERNAL} "${WORKDIR}/${INPUT_PATERNAL_BAM}"
 wget_download https://storage.googleapis.com/cmarkell-vg-wdl-dev/grch38_inputs/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.compact_decoys.fna.gz "${WORKDIR}/${REF_FASTA}"
 wget_download https://storage.googleapis.com/cmarkell-vg-wdl-dev/grch38_inputs/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.compact_decoys.dict -O "${WORKDIR}/${SEQ_DICT}"
-if [[ ${CHILD_NAME} == *"HG002"* ]]; then
-    wget_download https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG002_NA24385_son/NISTv4.2.1/GRCh38/HG002_GRCh38_1_22_v4.2.1_benchmark.vcf.gz "${WORKDIR}/${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz"
-    wget_download https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG002_NA24385_son/NISTv4.2.1/GRCh38/HG002_GRCh38_1_22_v4.2.1_benchmark.vcf.gz.tbi "${WORKDIR}/${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz.tbi"
-    wget_download https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG002_NA24385_son/NISTv4.2.1/GRCh38/HG002_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.bed "${WORKDIR}/${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.bed"
-elif [[ ${CHILD_NAME} == *"HG005"* ]]; then
-    wget_download https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/ChineseTrio/HG005_NA24631_son/NISTv4.2.1/GRCh38/HG005_GRCh38_1_22_v4.2.1_benchmark.vcf.gz "${WORKDIR}/${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz"
-    wget_download https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/ChineseTrio/HG005_NA24631_son/NISTv4.2.1/GRCh38/HG005_GRCh38_1_22_v4.2.1_benchmark.vcf.gz.tbi "${WORKDIR}/${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz.tbi"
-    wget_download https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/ChineseTrio/HG005_NA24631_son/NISTv4.2.1/GRCh38/HG005_GRCh38_1_22_v4.2.1_benchmark.bed "${WORKDIR}/${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.bed"
-fi
 if [[ $USE_DEFAULT_MODEL != true ]]; then 
     wget_download https://storage.googleapis.com/cmarkell-vg-wdl-dev/grch38_inputs/dt-giraffe-child-0806.tar.gz -O ${WORKFLOW_INPUT_DIR}/dt-giraffe-child-0806.tar.gz && tar -xzf ${WORKFLOW_INPUT_DIR}/dt-giraffe-child-0806.tar.gz
 fi
 
-# Sort and reorder input trio BAMS
+# Sort and reorder and indel-realign input trio BAMS
 for SAMPLE_NAME in "${CHILD_NAME}" "${MATERNAL_NAME}" "${PATERNAL_NAME}"; do
     cd $WORKDIR
     INPUT_BAM=${SAMPLE_NAME}.bam
