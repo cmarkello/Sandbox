@@ -22,6 +22,20 @@ function copy() {
     fi
 }
 
+function make_bedfile() {
+    if [ ! -e "${3}" ] ; then
+        docker run \
+        -e HIGH_CONF_BED=${1} \
+        -e REGION_BED=${2} \
+        -e HIGH_CONF_REGION_BED=${3} \
+        -v ${PWD}:${HOME} -w ${HOME} quay.io/biocontainers/bedtools:2.27.0--1
+        bedtools intersect \
+        -a ${HIGH_CONF_BED} \
+        -b ${REGION_BED} \
+        > ${HIGH_CONF_REGION_BED}
+    fi
+}
+
 USE_DEFAULT_MODEL=true
 WORKDIR=${HOME}/run_deeptrio_genotyping
 CHILD_NAME="${1}"
@@ -38,6 +52,10 @@ mkdir -p "${TMPDIR}"
 cd $WORKDIR
 copy ${VCF_FILE_CHILD} "${WORKDIR}/${CHILD_NAME}.vcf.gz"
 wget_download https://storage.googleapis.com/cmarkell-vg-wdl-dev/grch38_inputs/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.compact_decoys.fna "${WORKDIR}/${REF_FASTA}"
+wget_download https://storage.googleapis.com/cmarkell-vg-wdl-dev/grch38_inputs/ALL.GRCh38.genotypes.20170504.no_segdups_gt10kb.sites.sorted.vcf.gz "${WORKDIR}/ALL.GRCh38.genotypes.20170504.no_segdups_gt10kb.sites.sorted.vcf.gz"
+wget_download https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/genome-stratifications/v2.0/GRCh38/union/GRCh38_alldifficultregions.bed.gz "${WORKDIR}/GRCh38_alldifficultregions.bed.gz"
+wget_download https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/genome-stratifications/v2.0/GRCh38/union/GRCh38_alllowmapandsegdupregions.bed.gz "${WORKDIR}/GRCh38_alllowmapandsegdupregions.bed.gz"
+wget_download https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/genome-stratifications/v2.0/GRCh38/OtherDifficult/GRCh38_MHC.bed.gz "${WORKDIR}/GRCh38_MHC.bed.gz"
 if [[ ${CHILD_NAME} == *"HG002"* ]]; then
     wget_download https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG002_NA24385_son/NISTv4.2.1/GRCh38/HG002_GRCh38_1_22_v4.2.1_benchmark.vcf.gz "${WORKDIR}/${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz"
     wget_download https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG002_NA24385_son/NISTv4.2.1/GRCh38/HG002_GRCh38_1_22_v4.2.1_benchmark.vcf.gz.tbi "${WORKDIR}/${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz.tbi"
@@ -55,11 +73,24 @@ docker run \
     ${REF_FASTA} \
     -o ${REF_FASTA}.sdf
 
+make_bedfile ${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.bed GRCh38_alldifficultregions.bed.gz ${CHILD_NAME}_GRCh38_v4.2.1.all_difficult_regions.bed
+make_bedfile ${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.bed GRCh38_alldifficultregions.bed.gz ${CHILD_NAME}_GRCh38_v4.2.1.all_difficult_regions.bed
+
+
 # Evaluate Called File
 for REGION in "HG002_GRCh38_CMRG_smallvar_v1.00.bed" "HG002_GRCh38_v4.2.1.MHC.bed" "HG002_GRCh38_v4.2.1.alllowmapandsegdupregions.bed" "HG002_GRCh38_v4.2.1.all_difficult_regions.bed" "HG002_GRCh38_CHROM1-22_v4.2.1.highconf.NO_SNP1KG.specific.bed" "HG002_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.bed" ; do
-
-
 cd $WORKDIR
+docker run \
+-e TRUTH_VCF=${TRUTH_VCF} \
+-e TRUTH_BED=${TRUTH_BED} \
+-e CALLED_VCF=${CALLED_VCF} \
+-e REF_FASTA=${REF_FASTA} \
+-v ${PWD}:${HOME} -w ${HOME} quay.io/biocontainers/bedtools:2.27.0--1
+    bedtools intersect \
+    -a /data/markellocj/benchmark_data/HG002_cohort/HG002_GRCh38_CMRG_smallvar_v1.00.bed \
+    -b /data/markellocj/benchmark_data/HG002_cohort/HG002_GRCh38_CHROM1-22_v4.2.1.highconf.NO_SNP1KG.specific.bed \
+    > HG002_GRCh38_v4.2.1.NO_SNP1KG.specific.CMRG.bed
+
 rm -r $WORKDIR/happy_vcfeval_output_${CHILD_NAME}_${REGION}
 TRUTH_VCF="${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" \
 TRUTH_BED="${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.bed" \
