@@ -48,15 +48,14 @@ sed -i'' config.cfg -e "s/gcsa-index-mem: '110G'/gcsa-index-mem: '700G'/g" -e "s
 
 # Setup construction workflow
 export XDG_RUNTIME_DIR=""
-CONST_SOURCE_VCFS="/data/markellocj/graph_reference/construction_source_files/1kg_phased_genotypes_grch38/liftover_from_grch37_no_segdubs_gt10kb"
 # VCF order must be 1-22, X, Y to match FASTA
 CONST_VCFS=()
-CONST_VCFS=($((seq 1 22) | xargs -I {} echo ${CONST_SOURCE_VCFS}/ALL.chr{}_GRCh38.genotypes.20170504.no_segdups_gt10kb.renamed.vcf.gz))
-CONST_VCFS+=(${CONST_SOURCE_VCFS}/ALL.chrX_GRCh38.genotypes.20170504.no_segdups_gt10kb.renamed.vcf.gz)
-CONST_VCFS+=(${CONST_SOURCE_VCFS}/ALL.chrY_GRCh38.genotypes.20170504.no_segdups_gt10kb.renamed.vcf.gz)
+CONST_VCFS=($((seq 1 22) | xargs -I {} echo ${WORKFLOW_INPUT_DIR}/ALL.chr{}_GRCh38.genotypes.20170504.no_segdups_gt10kb.vcf.gz))
+CONST_VCFS+=(${WORKFLOW_INPUT_DIR}/ALL.chrX_GRCh38.genotypes.20170504.no_segdups_gt10kb.vcf.gz)
+CONST_VCFS+=(${WORKFLOW_INPUT_DIR}/ALL.chrY_GRCh38.genotypes.20170504.no_segdups_gt10kb.vcf.gz)
 CONST_VCFS_PHASED=()
-CONST_VCFS_PHASED=($((seq 1 22) | xargs -I {} echo ${CONST_SOURCE_VCFS}/CCDG_14151_B01_GRM_WGS_2020-08-05_chr{}.filtered.shapeit2-duohmm-phased.vcf.gz))
-CONST_VCFS_PHASED+=(${CONST_SOURCE_VCFS}/ALL.chrX_GRCh38.genotypes.20170504.no_segdups_gt10kb.renamed.vcf.gz)
+CONST_VCFS_PHASED=($((seq 1 22) | xargs -I {} echo ${WORKFLOW_INPUT_DIR}/CCDG_14151_B01_GRM_WGS_2020-08-05_chr{}.filtered.shapeit2-duohmm-phased.vcf.gz))
+CONST_VCFS_PHASED+=(${WORKFLOW_INPUT_DIR}/ALL.chrX_GRCh38.genotypes.20170504.no_segdups_gt10kb.vcf.gz)
 TOILVG_OUTSTORE="${WORKDIR}/construct-grch38-fast-liftover-nosegdup-outstore"
 TOILVG_JOBSTORE="${WORKDIR}/construct-grch38-fast-liftover-nosegdup-jobstore"
 LOGFILE="${WORKDIR}/construct_grch38_fast_liftover_nosegdup.log"

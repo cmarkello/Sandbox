@@ -1,5 +1,11 @@
 #!/bin/bash
 cd /data/Udpbinfo/usr/markellocj/vg_trio_methods/redo_mapevals
+
+vt view \
+-f "ALT~~'\*'" \
+HG002_GRCh38_1_22_v4.2.1_benchmark_phased_MHCassembly_StrandSeqANDTrio.vcf.gz \
+-o HG002_GRCh38_1_22_v4.2.1_benchmark_phased_MHCassembly_StrandSeqANDTrio.no_asterisk.vcf.gz
+
 module load python/3.7 singularity
 source /data/markellocj/test_toil_vg_run/toil_vg_tools/toilvg_venv/bin/activate
 WORK_DIR="/data/Udpbinfo/usr/markellocj/vg_trio_methods/redo_mapevals/HG002_construct_haplotype_sim_graph_workdir"
