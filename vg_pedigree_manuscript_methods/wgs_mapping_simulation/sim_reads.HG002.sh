@@ -1,15 +1,75 @@
 #!/bin/bash
-module load singularity
-cd /data/Udpbinfo/usr/markellocj/vg_trio_methods/redo_mapevals/HG002_sim_reads
+# sim_reads.HG002.sh: Simulate reads from the HG002 sample graph and stratify by various regions.
+
+set -ex
+set -o pipefail
+
+function make_bedfile() {
+    if [ ! -e "${3}" ] ; then
+        docker run \
+        -e HIGH_CONF_BED=${1} \
+        -e REGION_BED=${2} \
+        -e HIGH_CONF_REGION_BED=${3} \
+        -v ${PWD}:${HOME} -w ${HOME} quay.io/biocontainers/bedtools:2.27.0--1
+        bedtools intersect \
+        -a ${HIGH_CONF_BED} \
+        -b ${REGION_BED} \
+        > ${HIGH_CONF_REGION_BED}
+    fi
+}
+
+function make_nosnp1kg_bedfile() {
+    if [ ! -e "${3}" ] ; then
+        docker run \
+        -e HIGH_CONF_BED=${1} \
+        -e SNP1KG_VCF_SITES_FILE=${2} \
+        -e HIGH_CONF_NOSNP1KG_BED=${3} \
+        -v ${PWD}:${HOME} -w ${HOME} quay.io/biocontainers/bedtools:2.27.0--1
+        bedtools subtract \
+        -a ${HIGH_CONF_BED} \
+        -b ${SNP1KG_VCF_SITES_FILE} \
+        > ${HIGH_CONF_NOSNP1KG_BED}
+    fi
+}
+
+
+WORKDIR=${HOME}/run_sim_reads
+
+
+# Where should temp files go?
+mkdir -p "${WORKDIR}"
+export TMPDIR="${WORKDIR}/tmp"
+mkdir -p "${TMPDIR}"
+
+# Download data input data
+cd $WORKDIR
+wget_download https://storage.googleapis.com/cmarkell-vg-wdl-dev/test_input_reads/HG002.novaseq.pcr-free.35x.R1.fastq.gz "${WORKDIR}/${SAMPLE_NAME}.R1.fastq.gz"
+wget_download https://storage.googleapis.com/cmarkell-vg-wdl-dev/test_input_reads/HG002.novaseq.pcr-free.35x.R2.fastq.gz "${WORKDIR}/${SAMPLE_NAME}.R2.fastq.gz"
+
+# Format the reads
+zcat HG002.R1.fastq.gz | seqtk sample -s100 - 1000000 | gzip - > HG002.R1-1m.fq.gz
+zcat HG002.R2.fastq.gz | seqtk sample -s100 - 1000000 | gzip - > HG002.R2-1m.fq.gz
+paste <(zcat HG002.R1-1m.fq.gz) <(zcat HG002.R2-1m.fq.gz) | paste - - - - | shuf | awk -F'\t' '{OFS="\n"; print $1,$3,$5,$7 > "HG002.R1-shuffled-1m.fq"; print $2,$4,$6,$8 > "HG002.R2-shuffled-1m.fq"}'
+gzip HG002.R1-shuffled-1m.fq
+gzip HG002.R2-shuffled-1m.fq
+docker run -v ${PWD}:${HOME} -w ${HOME} quay.io/biocontainers/bbmap:38.93--he522d1c_0 \
+reformat.sh t=2 in=HG002.R1-shuffled-1m.fq.gz in2=HG002.R2-shuffled-1m.fq.gz out=HG002_merged_interleaved-shuffled-1m.fastq.gz
 
 ## SIMULATE BASELINE READS
-singularity shell -H ${PWD}:${HOME} --pwd ${HOME} \
--B /data/markellocj/raw_read_data/HG002_cohort_precision_fda_reads/HG002:${HOME}/HG002 \
-docker://quay.io/vgteam/vg:ci-2890-655a9622c3d60e87f14b88d943fbd8554214a975 \
-NREADS=1000000 \
-FASTQ=HG002/HG002_merged_interleaved-shuffled-1m.fastq.gz
-echo simulate reads
-vg sim -r -n $NREADS -a -s 12345 -p 570 -v 165 -i 0.00029 -x hg002_sample_grch38.xg -g hg002_sample_grch38.gbwt --sample-name HG002 --ploidy-regex "hs38d1:0,chrNC_007605:0,chrX:1,chrY:1,chrY_.*:1,chrEBV:0,.*:2" -F $FASTQ > sim.raw.gam
+
+# Simulate 1M reads for all high confident region stratification
+docker run \
+-e NREADS=1000000 \
+-e FASTQ=HG002_merged_interleaved-shuffled-1m.fastq.gz \
+-v ${PWD}:${HOME} -w ${HOME} quay.io/vgteam/vg:ci-2890-655a9622c3d60e87f14b88d943fbd8554214a975 \
+/bin/bash -c 'vg sim -r -I -n $NREADS -a -s 12345 -p 570 -v 165 -i 0.00029 -x hg002_sample_grch38.xg -g hg002_sample_grch38.gbwt --sample-name HG002 --ploidy-regex "hs38d1:0,chrNC_007605:0,chrX:1,chrY:1,chrY_.*:1,chrEBV:0,.*:2" -F $FASTQ > sim.1m.raw.gam'
+
+# Simulate 100M reads for difficult region stratification
+docker run \
+-e NREADS=100000000 \
+-e FASTQ=HG002_merged_interleaved-shuffled-1m.fastq.gz \
+-v ${PWD}:${HOME} -w ${HOME} quay.io/vgteam/vg:ci-2890-655a9622c3d60e87f14b88d943fbd8554214a975 \
+/bin/bash -c 'vg sim -r -I -n $NREADS -a -s 12345 -p 570 -v 165 -i 0.00029 -x hg002_sample_grch38.xg -g hg002_sample_grch38.gbwt --sample-name HG002 --ploidy-regex "hs38d1:0,chrNC_007605:0,chrX:1,chrY:1,chrY_.*:1,chrEBV:0,.*:2" -F $FASTQ > sim.100m.raw.gam'
 
 declare -a REGION_LIST=( "high_conf_hg002_v4.2.1_regions" "all_difficult_regions_hg002_v4.2.1_regions" "alllowmapandsegdupregions_hg002_v4.2.1_regions" "mhc_hg002_v4.2.1_regions" "cmrg_hg002_v4.2.1_regions" "high_conf_NO1000GP_hg002_v4.2.1_regions" )
 declare -a BED_FILE_LIST=( "HG002_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.bed" "HG002_GRCh38_v4.2.1.all_difficult_regions.bed" "HG002_GRCh38_v4.2.1.alllowmapandsegdupregions.bed" "HG002_GRCh38_v4.2.1.MHC.bed" "HG002_GRCh38_CMRG_smallvar_v1.00.bed" "HG002_GRCh38_CHROM1-22_v4.2.1.highconf.NO_SNP1KG.bed" )

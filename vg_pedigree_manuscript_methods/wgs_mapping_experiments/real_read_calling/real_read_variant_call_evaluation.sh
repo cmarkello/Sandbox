@@ -57,6 +57,7 @@ function run_happy() {
         TRUTH_BED=${3}
         CALLED_VCF=${4}
         REF_FASTA=${5}
+        mkdir -p ${OUT_DIR}
         docker run \
         -e OUT_DIR=${OUT_DIR} \
         -e TRUTH_VCF=${TRUTH_VCF} \

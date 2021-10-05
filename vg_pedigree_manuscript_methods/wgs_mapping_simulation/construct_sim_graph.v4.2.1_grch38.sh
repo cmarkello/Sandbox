@@ -22,7 +22,7 @@ function copy() {
     fi
 }
 
-WORKDIR=${HOME}/run_sim_graph_construction
+WORKDIR=${HOME}/run_sim_reads
 WORKFLOW_INPUT_DIR=${WORKDIR}/inputs
 
 # Where should temp files go?
