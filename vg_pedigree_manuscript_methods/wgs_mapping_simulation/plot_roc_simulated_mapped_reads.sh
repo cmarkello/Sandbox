@@ -37,6 +37,6 @@ for REGION in "${REGION_LIST[@]}" ; do
     # Grab giraffe and map and graphaligner non-linear, and other linear mappers
     tail -q -n +2 giraffe_parental_roc_stats.${REGION}.tsv giraffe_snp1kg_roc_stats.${REGION}.tsv giraffe_primary_roc_stats.${REGION}.tsv | grep ${PE_OPTS} | grep -P "(${GRAPH}(${GBWT})?${READS}|${LINEAR_GRAPH}(${GBWT})?${READS})" | sed 's/null/0/g' | humanize_names >> toplot-${SPECIES}-headline_${GRAPH}-${READS}-${PAIRING}.tsv
 
-    Rscript ${HOME}/vg_pedigree_manuscript_methods/wgs_mapping_simulation/plot-roc.R toplot-${SPECIES}-headline_${GRAPH}-${READS}-${PAIRING}.tsv roc-plot-${SPECIES}-headline_${GRAPH}-${READS}-${PAIRING}.${REGION}.png
+    Rscript ${HOME}/vg_pedigree_manuscript_methods/wgs_mapping_simulation/plot-roc.R toplot-${SPECIES}-headline_${GRAPH}-${READS}-${PAIRING}.tsv roc-plot-${SPECIES}-headline_${GRAPH}-${READS}-${PAIRING}.${REGION}.png ${REGION}
 done
 

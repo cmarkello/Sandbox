@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 #
-# plot-roc.R <stats TSV> <destination image file> [<comma-separated "aligner" names to include> [title]]
+# plot-roc.R <stats TSV> <destination image file> <region string> [<comma-separated "aligner" names to include> [title]]
 #
 # plots a pseudo-ROC that allows the comparison of different alignment methods and their mapping quality calculations
 # the format is clarified in the map-sim script, and should be a table (tab separated) of:
@@ -29,9 +29,15 @@ if (! ("count" %in% names(dat))) {
     dat$count <- rep(1, nrow(dat))
 }
 
+# Determine the region
+region <- ''
 if (length(commandArgs(TRUE)) > 2) {
+    region <- commandArgs(TRUE)[3]
+}
+
+if (length(commandArgs(TRUE)) > 3) {
     # A set of aligners to plot is specified. Parse it.
-    aligner.set <- unlist(strsplit(commandArgs(TRUE)[3], ","))
+    aligner.set <- unlist(strsplit(commandArgs(TRUE)[4], ","))
     # Subset the data to those aligners
     dat <- dat[dat$aligner %in% aligner.set,]
     # And restrict the aligner factor levels to just the ones in the set
@@ -40,8 +46,8 @@ if (length(commandArgs(TRUE)) > 2) {
 
 # Determine title
 title <- ''
-if (length(commandArgs(TRUE)) > 3) {
-    title <- commandArgs(TRUE)[4]
+if (length(commandArgs(TRUE)) > 4) {
+    title <- commandArgs(TRUE)[5]
 }
 
 # Determine the order of aligners, based on sorting in a dash-separated tag aware manner
@@ -137,11 +143,15 @@ dat.roc <- dat %>%
     
 # We want smart scales that know how tiny a rate of things we can care about
 total.reads <- max(dat.roc$Total)
-min.log10 <- -3  # floor(log10(1/total.reads)) for default, -6 for highconf_pe, -6 for conf_difficult_pe, -5 for conf_lowmap_pe, -3.7 for conf_mhc_pe, -3.0 for conf_cmrg_pe, -4.5 for conf_NOSNP1KG_pe, -4.5 for conf_difficult_NOSNP1KG_pe, -4.5 for conf_lowmap_NOSNP1KG_pe, -3 for conf_mhc_NOSNP1KG_pe, -3 for conf_cmrg_NOSNP1KG_pe
-max.log10 <- 0 # 0 for default, -2 for highconf_pe, -2 for conf_difficult_pe, -1 for conf_lowmap_pe, -1.5 for conf_mhc_pe, -1.0 for conf_cmrg_pe , -0.5 for conf_NOSNP1KG_pe, -0.5 for conf_difficult_NOSNP1KG_pe, -0.5 for conf_lowmap_NOSNP1KG_pe, 0 for conf_mhc_NOSNP1KG_pe, 0 for conf_cmrg_NOSNP1KG_pe 
+min.log10 <- floor(log10(1/total.reads)) 
+max.log10 <- 0 
+min.log10 <- switch(region, "high_conf_hg002_v4.2.1_regions_1M" = -6, "all_difficult_regions_hg002_v4.2.1_regions_1M" = -6, "alllowmapandsegdupregions_hg002_v4.2.1_regions_100M" = -5, "mhc_hg002_v4.2.1_regions_100M" = -3.7, "cmrg_hg002_v4.2.1_regions_100M" = -3.0, "high_conf_NO1000GP_hg002_v4.2.1_regions_1M" = -4.5, "all_difficult_regions_NO1000GP_hg002_v4.2.1_regions_1M" = -4.5, "alllowmapandsegdupregions_NO1000GP_hg002_v4.2.1_regions_100M" = -4.5, "mhc_hg002_NO1000GP_v4.2.1_regions_100M" = -3, "cmrg_hg002_NO1000GP_v4.2.1_regions_100M" = -3)
+max.log10 <- switch(region, "high_conf_hg002_v4.2.1_regions_1M" = -2, "all_difficult_regions_hg002_v4.2.1_regions_1M" = -2, "alllowmapandsegdupregions_hg002_v4.2.1_regions_100M" = -1, "mhc_hg002_v4.2.1_regions_100M" = -1.5, "cmrg_hg002_v4.2.1_regions_100M" = -1.0, "high_conf_NO1000GP_hg002_v4.2.1_regions_1M" = -0.5, "all_difficult_regions_NO1000GP_hg002_v4.2.1_regions_1M" = -0.5, "alllowmapandsegdupregions_NO1000GP_hg002_v4.2.1_regions_100M" = -0.5, "mhc_hg002_NO1000GP_v4.2.1_regions_100M" = 0, "cmrg_hg002_NO1000GP_v4.2.1_regions_100M" = 0)
 # Work out a set of bounds to draw the plot on
 range.log10 <- min.log10 : max.log10
 range.unlogged = 10^range.log10
+
+yaxisrange <- switch(region, "high_conf_hg002_v4.2.1_regions_1M" = c(0.9745,0.996), "all_difficult_regions_hg002_v4.2.1_regions_1M" = c(0.955,0.995), "alllowmapandsegdupregions_hg002_v4.2.1_regions_100M" = c(0.75,0.97), "mhc_hg002_v4.2.1_regions_100M" = c(0.96,0.995), "cmrg_hg002_v4.2.1_regions_100M" = c(0.91,0.98), "high_conf_NO1000GP_hg002_v4.2.1_regions_1M" = c(0.4,0.85), "all_difficult_regions_NO1000GP_hg002_v4.2.1_regions_1M" = c(0.25,0.8), "alllowmapandsegdupregions_NO1000GP_hg002_v4.2.1_regions_100M" = c(0.1,0.75), "mhc_hg002_NO1000GP_v4.2.1_regions_100M" = c(0.3,0.7), "cmrg_hg002_NO1000GP_v4.2.1_regions_100M" = c(0.45,0.81))
 
 dat.plot <- ggplot(dat.roc, aes( x= FPR, y = TPR, color = aligner, label=mq)) +
     geom_line() + geom_text_repel(data = subset(dat.roc, mq %% 60 == 0), size=3.5, point.padding=unit(0.7, "lines"), segment.alpha=I(1/2.5), show.legend=FALSE) +
@@ -153,7 +163,7 @@ dat.plot <- ggplot(dat.roc, aes( x= FPR, y = TPR, color = aligner, label=mq)) +
     theme_bw() + 
     ggtitle(title) + 
     theme(aspect.ratio=1) +
-    coord_cartesian(ylim=c(0.3,0.7)) # (0.9745,0.996) for highconf_pe, (0.955,0.995) for conf_difficult_pe, (0.75,0.97) for conf_lowmap_pe, (0.96,0.995) for conf_mhc_pe, (0.91,0.98) for conf_cmrg_pe, (0.4,0.85) for conf_NOSNP1KG_pe, (0.25,0.8) for conf_difficult_NOSNP1KG_pe, (0.1,0.75) for conf_lowmap_NOSNP1KG_pe, (0.3,0.7) for conf_mhc_NOSNP1KG_pe, (0.45,0.81) for conf_cmrg_NOSNP1KG_pe
+    coord_cartesian(ylim=yaxisrange)
     
 if (title != '') {
     # And a title
