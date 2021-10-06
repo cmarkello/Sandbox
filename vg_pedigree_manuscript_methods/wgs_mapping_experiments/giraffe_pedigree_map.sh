@@ -119,8 +119,8 @@ HG003 \
 --ref_fasta ${WORKFLOW_INPUT_DIR}/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.compact_decoys.fna.gz \
 --ref_fasta_index ${WORKFLOW_INPUT_DIR}/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.compact_decoys.fna.fai \
 --ref_fasta_dict ${WORKFLOW_INPUT_DIR}/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.compact_decoys.dict \
---deeptrio_child_model /data/Udpbinfo/Scratch/markellocj/toil_vg_workflow_inputs/toil_vg_inputs/grch38_inputs/dt-giraffe-child-0806.tar.gz \
---deeptrio_parent_model /data/Udpbinfo/Scratch/markellocj/toil_vg_workflow_inputs/toil_vg_inputs/grch38_inputs/dt-giraffe-parent-0806.tar.gz \
+--deeptrio_child_model ${WORKFLOW_INPUT_DIR}/dt-giraffe-child-0806.tar.gz \
+--deeptrio_parent_model ${WORKFLOW_INPUT_DIR}/dt-giraffe-parent-0806.tar.gz \
 --deepvariant_model ${WORKFLOW_INPUT_DIR}/dv-giraffe-0507.tar.gz \
 --use_haplotypes \
 --xg_index ${WORKFLOW_INPUT_DIR}/liftover_snp1kg_grch38_nosegdup.xg \
@@ -184,8 +184,8 @@ HG006 \
 --ref_fasta ${WORKFLOW_INPUT_DIR}/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.compact_decoys.fna.gz \
 --ref_fasta_index ${WORKFLOW_INPUT_DIR}/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.compact_decoys.fna.fai \
 --ref_fasta_dict ${WORKFLOW_INPUT_DIR}/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.compact_decoys.dict \
---deeptrio_child_model /data/Udpbinfo/Scratch/markellocj/toil_vg_workflow_inputs/toil_vg_inputs/grch38_inputs/dt-giraffe-child-0806.tar.gz \
---deeptrio_parent_model /data/Udpbinfo/Scratch/markellocj/toil_vg_workflow_inputs/toil_vg_inputs/grch38_inputs/dt-giraffe-parent-0806.tar.gz \
+--deeptrio_child_model ${WORKFLOW_INPUT_DIR}/dt-giraffe-child-0806.tar.gz \
+--deeptrio_parent_model ${WORKFLOW_INPUT_DIR}/dt-giraffe-parent-0806.tar.gz \
 --deepvariant_model ${WORKFLOW_INPUT_DIR}/dv-giraffe-0507.tar.gz \
 --use_haplotypes \
 --xg_index ${WORKFLOW_INPUT_DIR}/liftover_snp1kg_grch38_nosegdup.xg \

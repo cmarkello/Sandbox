@@ -1,2 +1,0 @@
-#!/bin/bash
-cd /data/Udpwork/usr/markellocj/non_segdup_vg_pedigree_runs/hg005_cohort/bwamem/; bcftools concat -O v HG005.bwamem.deeptrio.chr{?,??}.vcf.gz > merged.deeptrio.not_indel_realigned.vcf && bcftools sort merged.deeptrio.not_indel_realigned.vcf -O v > merged.deeptrio.not_indel_realigned.sorted.vcf && rm merged.deeptrio.not_indel_realigned.vcf && bgzip -f merged.deeptrio.not_indel_realigned.sorted.vcf && tabix -p vcf merged.deeptrio.not_indel_realigned.sorted.vcf.gz

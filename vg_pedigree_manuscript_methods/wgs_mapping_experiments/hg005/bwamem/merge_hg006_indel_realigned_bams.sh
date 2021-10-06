@@ -1,2 +1,0 @@
-#!/bin/bash
-cd /data/Udpwork/usr/markellocj/non_segdup_vg_pedigree_runs/hg005_cohort/bwamem/bwamem_grch38_hg006_bam_by_chr && module load samtools/1.11 && time samtools merge -f -@ 32 hg006.bwamem.abra_indel_realigned.merged.bam raw.chr{?,??}.indel_realigned.bam && time samtools sort -@ 32 hg006.bwamem.abra_indel_realigned.merged.bam -O BAM > hg006.bwamem.abra_indel_realigned.positionsorted.bam && rm hg006.bwamem.abra_indel_realigned.merged.bam

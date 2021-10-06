@@ -1,35 +1,56 @@
 #!/bin/bash
+# run_mapevals.sh: Evaluate reads simulated from the HG002 sample dataset and region stratifications.
 
-WORK_DIR="/data/Udpbinfo/usr/markellocj/vg_trio_methods/redo_mapevals/HG005_sim_reads"
-declare -a SIMULATED_READ_DIR_LIST=( "." "high_conf_hg005_v4.2.1_regions" "all_difficult_regions_hg005_v4.2.1_regions" "alllowmapandsegdupregions_hg005_v4.2.1_regions" "mhc_hg005_v4.2.1_regions" "high_conf_NO1000GP_hg005_v4.2.1_regions" )
+WORKDIR=${HOME}/run_sim_reads
+
+
+# Where should temp files go?
+mkdir -p "${WORKDIR}"
+export TMPDIR="${WORKDIR}/tmp"
+mkdir -p "${TMPDIR}"
+
+cd ${WORKDIR}
+
+declare -a SIMULATED_READ_DIR_LIST=( "high_conf_hg002_v4.2.1_regions_1M" "all_difficult_regions_hg002_v4.2.1_regions_1M" "alllowmapandsegdupregions_hg002_v4.2.1_regions_100M" "mhc_hg002_v4.2.1_regions_100M" "cmrg_hg002_v4.2.1_regions_100M" "high_conf_NO1000GP_hg002_v4.2.1_regions_1M" "all_difficult_regions_NO1000GP_hg002_v4.2.1_regions_1M" "alllowmapandsegdupregions_NO1000GP_hg002_v4.2.1_regions_100M" "mhc_hg002_NO1000GP_v4.2.1_regions_100M" "cmrg_hg002_NO1000GP_v4.2.1_regions_100M" )
+declare -a SIMULATED_READ_DIR_LIST=( "." "high_conf_hg002_v4.2.1_regions" "all_difficult_regions_hg002_v4.2.1_regions" "alllowmapandsegdupregions_hg002_v4.2.1_regions" "mhc_hg002_v4.2.1_regions" "cmrg_hg002_v4.2.1_regions" "high_conf_NO1000GP_hg002_v4.2.1_regions" )
 
 for SIMULATED_READ_DIR in "${SIMULATED_READ_DIR_LIST[@]}" ; do
     cd ${WORK_DIR}
-    module load samtools bwa singularity python
 
     # RUN BWAMEM
-    time bwa mem -t 32 -p /data/markellocj/fasta_references/grch38_reference/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.compact_decoys.fna ${WORK_DIR}/${SIMULATED_READ_DIR}/sim.paired.fq > mapped.bam
+    cd $WORKDIR
+    docker run \
+    -v ${WORK_DIR}/${SIMULATED_READ_DIR}:${SIMULATED_READ_DIR} \
+    -v ${PWD}:${HOME} -w ${HOME} biocontainers/bwa:v0.7.17_cv1 \
+        bwa mem \
+        -t 16 \
+        GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.compact_decoys.fna \
+        ${SIMULATED_READ_DIR}/sim.paired.fq
+        > mapped.sam
+    
+    docker run -v ${PWD}:${HOME} -w ${HOME} quay.io/ucsc_cgl/samtools:latest \
+        samtools view -F 2048 -b mapped.sam > mapped.primary.bam
+    
+    docker run -v ${PWD}:${HOME} -w ${HOME} quay.io/ucsc_cgl/samtools:latest \
+        samtools view -f 2048 -b mapped.sam > mapped.secondary.bam
 
-    time samtools view -F 2048 -b mapped.bam > mapped.primary.bam
-    time samtools view -f 2048 -b mapped.bam > mapped.secondary.bam
-
-    singularity exec --env SIMULATED_READ_DIR=${SIMULATED_READ_DIR} -H ${PWD}:${HOME} --pwd ${HOME} docker://quay.io/vgteam/vg:v1.31.0 \
+    docker run -e SIMULATED_READ_DIR=${SIMULATED_READ_DIR} -v ${PWD}:${HOME} -w ${HOME} docker://quay.io/vgteam/vg:v1.31.0 \
     /bin/bash -c 'set -eo pipefail ; \
     SIMULATED_READ_DIR=${SIMULATED_READ_DIR} ; \
-    time vg inject -x hg005_sample_grch38.xg mapped.primary.bam > mapped.primary.bwa.${SIMULATED_READ_DIR}.gam ; \
-    time vg inject -x hg005_sample_grch38.xg mapped.secondary.bam > mapped.secondary.bwa.${SIMULATED_READ_DIR}.gam ; \
-    time vg view -aj mapped.primary.bwa.${SIMULATED_READ_DIR}.gam | sed "s/\/1/_1/g" | sed "s/\/2/_2/g" | vg view -aGJ - | vg annotate -m -x hg005_sample_grch38.xg -a - | vg gamcompare -r 100 -s - ${SIMULATED_READ_DIR}/sim.gam 2> count | vg view -aj - > compared.primary.json ; \
-    time vg view -aj mapped.secondary.bwa.${SIMULATED_READ_DIR}.gam | sed "s/\/1/_1/g" | sed "s/\/2/_2/g" | vg view -aGJ - | vg annotate -m -x hg005_sample_grch38.xg -a - | vg gamcompare -r 100 - ${SIMULATED_READ_DIR}/sim.gam | vg view -aj - > compared.secondary.json'
+    time vg inject -x hg002_sample_grch38.xg mapped.primary.bam > mapped.primary.bwa.${SIMULATED_READ_DIR}.gam ; \
+    time vg inject -x hg002_sample_grch38.xg mapped.secondary.bam > mapped.secondary.bwa.${SIMULATED_READ_DIR}.gam ; \
+    time vg view -aj mapped.primary.bwa.${SIMULATED_READ_DIR}.gam | sed "s/\/1/_1/g" | sed "s/\/2/_2/g" | vg view -aGJ - | vg annotate -m -x hg002_sample_grch38.xg -a - | vg gamcompare -r 100 -s - ${SIMULATED_READ_DIR}/sim.gam 2> count | vg view -aj - > compared.primary.json ; \
+    time vg view -aj mapped.secondary.bwa.${SIMULATED_READ_DIR}.gam | sed "s/\/1/_1/g" | sed "s/\/2/_2/g" | vg view -aGJ - | vg annotate -m -x hg002_sample_grch38.xg -a - | vg gamcompare -r 100 - ${SIMULATED_READ_DIR}/sim.gam | vg view -aj - > compared.secondary.json'
 
-    time python /data/markellocj/git/giraffe-sv-paper/scripts/mapping/combine_reads.py compared.primary.json compared.secondary.json bwamem.compared.json
+    python ${HOME}/vg_pedigree_manuscript_methods/wgs_mapping_simulation/combine_reads.py compared.primary.json compared.secondary.json bwamem.compared.json
 
-    singularity exec --env SIMULATED_READ_DIR=${SIMULATED_READ_DIR} -H ${PWD}:${HOME} --pwd ${HOME} docker://quay.io/vgteam/vg:v1.31.0 \
+    docker run -e SIMULATED_READ_DIR=${SIMULATED_READ_DIR} -v ${PWD}:${HOME} -w ${HOME} docker://quay.io/vgteam/vg:v1.31.0 \
     /bin/bash -c 'set -o pipefail ; \
     sed -i "/^$/d" bwamem.compared.json ; \
     printf "correct\tmq\tscore\taligner\n" > bwamem_roc_stats.${SIMULATED_READ_DIR}.tsv ; \
-    READS="HG005" ; \
+    READS="HG002" ; \
     PAIRING="paired" ; \
-    GRAPH="hg005_sample_grch38" ; \
+    GRAPH="hg002_sample_grch38" ; \
     ALGORITHM="bwamem" ; \
     CORRECT_COUNT="$(grep correctly_mapped bwamem.compared.json | wc -l)"; \
     SCORE="$(sed -n "2p" count | sed "s/[^0-9\.]//g")"; \
@@ -44,16 +65,15 @@ for SIMULATED_READ_DIR in "${SIMULATED_READ_DIR_LIST[@]}" ; do
     jq -r "(if .correctly_mapped then 1 else 0 end|tostring) + \",\" + (.mapping_quality|tostring) + \",\" + (.score|tostring)" bwamem.compared.json | sed "s/\,/\t/g" | sed "s/$/\tbwamem_${GRAPH}${READS}${PAIRING}/" | sed "s/single//g ; s/paired/-pe/g ; s/null/0/g" >> bwamem_roc_stats.${SIMULATED_READ_DIR}.tsv'
 
     # RUN GIRAFFE PRIMARY
-    singularity exec --env SIMULATED_READ_DIR=${SIMULATED_READ_DIR} -H ${PWD}:${HOME} --pwd ${HOME} \
-    -B /data/markellocj/graph_reference/snp1kg_ref_wgs/grch38_compact_decoys_primary_ref:${HOME}/grch38_compact_decoys_primary_ref docker://quay.io/vgteam/vg:v1.31.0 \
+    docker run -e SIMULATED_READ_DIR=${SIMULATED_READ_DIR} -v ${HOME}/run_graph_construction/construct-grch38-primary-outstore:${HOME}/construct-grch38-primary-outstore -v ${PWD}:${HOME} -w ${HOME} docker://quay.io/vgteam/vg:v1.31.0 \
     /bin/bash -c 'set -o pipefail ; \
     PARAM_PRESET="default" ; \
     PAIRED="-i" ; \
-    time vg giraffe -x grch38_compact_decoys_primary_ref/primarygrch38_no_alt_plus_hs38d1_v1.27.0_90_ga64b70c1f.xg -H grch38_compact_decoys_primary_ref/primarygrch38_no_alt_plus_hs38d1_v1.27.0_90_ga64b70c1f.gbwt -m grch38_compact_decoys_primary_ref/primarygrch38_no_alt_plus_hs38d1_v1.27.0_90_ga64b70c1f.min -d grch38_compact_decoys_primary_ref/primarygrch38_no_alt_plus_hs38d1_v1.27.0_90_ga64b70c1f.dist -G ${SIMULATED_READ_DIR}/sim.gam -b ${PARAM_PRESET} ${PAIRED} -t 22 > mapped.giraffe_primary.${SIMULATED_READ_DIR}.gam ; \
-    time vg gamcompare -r 100 -s <(vg annotate -m -x grch38_compact_decoys_primary_ref/primarygrch38_no_alt_plus_hs38d1_v1.27.0_90_ga64b70c1f.xg -a mapped.giraffe_primary.${SIMULATED_READ_DIR}.gam) ${SIMULATED_READ_DIR}/sim.gam 2>count | vg view -aj - > giraffe_primary.compared.json ; \
-    GRAPH="hg005_sample_grch38" ; \
+    time vg giraffe -x construct-grch38-primary-outstore/primary_grch38.xg -H construct-grch38-primary-outstore/primary_grch38.gbwt -m construct-grch38-primary-outstore/primary_grch38.min -d construct-grch38-primary-outstore/primary_grch38.dist -G ${SIMULATED_READ_DIR}/sim.gam -b ${PARAM_PRESET} ${PAIRED} -t 22 > mapped.giraffe_primary.${SIMULATED_READ_DIR}.gam ; \
+    time vg gamcompare -r 100 -s <(vg annotate -m -x construct-grch38-primary-outstore/primary_grch38.xg -a mapped.giraffe_primary.${SIMULATED_READ_DIR}.gam) ${SIMULATED_READ_DIR}/sim.gam 2>count | vg view -aj - > giraffe_primary.compared.json ; \
+    GRAPH="hg002_sample_grch38" ; \
     GBWT="sampled.64" ; \
-    READS="HG005" ; \
+    READS="HG002" ; \
     PARAM_PRESET="default" ; \
     PAIRING="paired" ; \
     CORRECT_COUNT="$(sed -n "1p" count | sed "s/[^0-9]//g")" ; \
@@ -69,16 +89,15 @@ for SIMULATED_READ_DIR in "${SIMULATED_READ_DIR_LIST[@]}" ; do
     sed -i "s/single//g ; s/paired/-pe/g ; s/null/0/g" giraffe_primary_roc_stats.${SIMULATED_READ_DIR}.tsv'
 
     # RUN GIRAFFE 1000GP
-    singularity exec --env SIMULATED_READ_DIR=${SIMULATED_READ_DIR} -H ${PWD}:${HOME} --pwd ${HOME} \
-    -B /data/markellocj/graph_reference/snp1kg_ref_wgs/grch38_liftover_snp1kg_nosegdup/all_samples:${HOME}/all_samples docker://quay.io/vgteam/vg:v1.31.0 \
+    docker run -e SIMULATED_READ_DIR=${SIMULATED_READ_DIR} -v ${HOME}/run_graph_construction/construct-grch38-liftover-nosegdup-outstore:${HOME}/construct-grch38-liftover-nosegdup-outstore -v ${PWD}:${HOME} -w ${HOME} docker://quay.io/vgteam/vg:v1.31.0 \
     /bin/bash -c 'set -o pipefail ; \
     PARAM_PRESET="default" ; \
     PAIRED="-i" ; \
-    time vg giraffe -x all_samples/liftover_snp1kg_grch38_nosegdup.xg -H all_samples/liftover_snp1kg_grch38_nosegdup.gbwt -m all_samples/liftover_snp1kg_grch38_nosegdup.min -d all_samples/liftover_snp1kg_grch38_nosegdup.dist -G ${SIMULATED_READ_DIR}/sim.gam -b ${PARAM_PRESET} ${PAIRED} -t 22 > mapped.giraffe_snp1kg.${SIMULATED_READ_DIR}.gam ; \
-    time vg gamcompare -r 100 -s <(vg annotate -m -x all_samples/liftover_snp1kg_grch38_nosegdup.xg -a mapped.giraffe_snp1kg.${SIMULATED_READ_DIR}.gam) ${SIMULATED_READ_DIR}/sim.gam 2>count | vg view -aj - > giraffe_snp1kg.compared.json ; \
-    GRAPH="hg005_sample_grch38" ; \
+    time vg giraffe -x construct-grch38-liftover-nosegdup-outstore/liftover_snp1kg_grch38_nosegdup.xg -H construct-grch38-liftover-nosegdup-outstore/liftover_snp1kg_grch38_nosegdup.gbwt -m construct-grch38-liftover-nosegdup-outstore/liftover_snp1kg_grch38_nosegdup.min -d construct-grch38-liftover-nosegdup-outstore/liftover_snp1kg_grch38_nosegdup.dist -G ${SIMULATED_READ_DIR}/sim.gam -b ${PARAM_PRESET} ${PAIRED} -t 22 > mapped.giraffe_snp1kg.${SIMULATED_READ_DIR}.gam ; \
+    time vg gamcompare -r 100 -s <(vg annotate -m -x construct-grch38-liftover-nosegdup-outstore/liftover_snp1kg_grch38_nosegdup.xg -a mapped.giraffe_snp1kg.${SIMULATED_READ_DIR}.gam) ${SIMULATED_READ_DIR}/sim.gam 2>count | vg view -aj - > giraffe_snp1kg.compared.json ; \
+    GRAPH="hg002_sample_grch38" ; \
     GBWT="sampled.64" ; \
-    READS="HG005" ; \
+    READS="HG002" ; \
     PARAM_PRESET="default" ; \
     PAIRING="paired" ; \
     CORRECT_COUNT="$(sed -n "1p" count | sed "s/[^0-9]//g")" ; \
@@ -94,16 +113,15 @@ for SIMULATED_READ_DIR in "${SIMULATED_READ_DIR_LIST[@]}" ; do
     sed -i "s/single//g ; s/paired/-pe/g ; s/null/0/g" giraffe_snp1kg_roc_stats.${SIMULATED_READ_DIR}.tsv'
 
     # RUN GIRAFFE PARENTAL
-    singularity exec --env SIMULATED_READ_DIR=${SIMULATED_READ_DIR} -H ${PWD}:${HOME} --pwd ${HOME} \
-    -B /data/markellocj/graph_reference/parental_ref_deeptrio_wgs_grch38_nosegdup_v1.31.0/hg005_cohort:${HOME}/hg005_cohort docker://quay.io/vgteam/vg:v1.31.0 \
+    docker run -e SIMULATED_READ_DIR=${SIMULATED_READ_DIR} -v ${HOME}/run_giraffe_pedigree_mapping/HG002_vg_pedigree_outstore:${HOME}/HG002_vg_pedigree_outstore -v ${PWD}:${HOME} -w ${HOME} docker://quay.io/vgteam/vg:v1.31.0 \
     /bin/bash -c 'set -o pipefail ; \
     PARAM_PRESET="default" ; \
     PAIRED="-i" ; \
-    time vg giraffe -x hg005_cohort/HG005.parental.graphs.xg -H hg005_cohort/HG005.parental.graphs.gbwt -m hg005_cohort/HG005.parental.graphs.min -d hg005_cohort/HG005.parental.graphs.dist -G ${SIMULATED_READ_DIR}/sim.gam -b ${PARAM_PRESET} ${PAIRED} -t 22 > mapped.giraffe_parental.${SIMULATED_READ_DIR}.gam ; \
-    time vg gamcompare -r 100 -s <(vg annotate -m -x hg005_cohort/HG005.parental.graphs.xg -a mapped.giraffe_parental.${SIMULATED_READ_DIR}.gam) ${SIMULATED_READ_DIR}/sim.gam 2>count | vg view -aj - > giraffe_parental.compared.json ; \
-    GRAPH="hg005_sample_grch38" ; \
+    time vg giraffe -x HG002_vg_pedigree_outstore/HG002.parental.graphs.xg -H HG002_vg_pedigree_outstore/HG002.parental.graphs.gbwt -m HG002_vg_pedigree_outstore/HG002.parental.graphs.min -d HG002_vg_pedigree_outstore/HG002.parental.graphs.dist -G ${SIMULATED_READ_DIR}/sim.gam -b ${PARAM_PRESET} ${PAIRED} -t 22 > mapped.giraffe_parental.${SIMULATED_READ_DIR}.gam ; \
+    time vg gamcompare -r 100 -s <(vg annotate -m -x HG002_vg_pedigree_outstore/HG002.parental.graphs.xg -a mapped.giraffe_parental.${SIMULATED_READ_DIR}.gam) ${SIMULATED_READ_DIR}/sim.gam 2>count | vg view -aj - > giraffe_parental.compared.json ; \
+    GRAPH="hg002_sample_grch38" ; \
     GBWT="sampled.64" ; \
-    READS="HG005" ; \
+    READS="HG002" ; \
     PARAM_PRESET="default" ; \
     PAIRING="paired" ; \
     CORRECT_COUNT="$(sed -n "1p" count | sed "s/[^0-9]//g")" ; \
