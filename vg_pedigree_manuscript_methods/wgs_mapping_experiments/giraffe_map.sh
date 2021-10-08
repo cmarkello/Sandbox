@@ -91,6 +91,6 @@ for SAMPLE_NAME in "${SAMPLE_NAMES[@]}" ; do
     -f ${READ2} \
     ${FAST_PARAM} \
     --output-format BAM \
-    --ref-paths ${SEQ_DICT} > giraffe_${MAPPER_TYPE}_${SAMPLE_NAME}.bam
+    --ref-paths ${SEQ_DICT} > giraffe_${SAMPLE_NAME}.bam
 done
 

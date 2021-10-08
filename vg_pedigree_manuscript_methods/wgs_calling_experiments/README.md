@@ -1,0 +1,75 @@
+## Running the scripts
+
+First, run the Illumina DRAGEN variant caller on the HG002 and HG005 sample sets of alignments.
+
+```
+./real_read_dragen_call.sh HG002 ${HOME}/run_bwamem_mapping/bwamem_HG002.sam false
+./real_read_dragen_call.sh HG002 ${HOME}/run_dragen_mapping/dragen_output_HG002.bam false
+./real_read_dragen_call.sh HG002 ${HOME}/run_giraffe_mapping/giraffe_HG002.bam true
+./real_read_dragen_call.sh HG002 ${HOME}/run_giraffe_pedigree_mapping/HG002_default_vg_pedigree_outstore/HG002_merged.bam true
+./real_read_dragen_call.sh HG005 ${HOME}/run_bwamem_mapping/bwamem_HG005.sam false
+./real_read_dragen_call.sh HG005 ${HOME}/run_dragen_mapping/dragen_output_HG005.bam false
+./real_read_dragen_call.sh HG005 ${HOME}/run_giraffe_mapping/giraffe_HG005.bam true
+./real_read_dragen_call.sh HG005 ${HOME}/run_giraffe_pedigree_mapping/HG005_default_vg_pedigree_outstore/HG005_merged.bam true
+```
+
+Next, run the DeepTrio variant caller on the HG002 and HG005 trio sample sets of alignments.
+
+```
+./real_read_deeptrio_call.sh BWAMEM HG002 HG004 HG003 ${HOME}/run_bwamem_mapping/bwamem_HG002.sam ${HOME}/run_bwamem_mapping/bwamem_HG004.sam ${HOME}/run_bwamem_mapping/bwamem_HG003.sam
+./real_read_deeptrio_call.sh DRAGEN HG002 HG004 HG003 ${HOME}/run_dragen_mapping/dragen_output_HG002.bam ${HOME}/run_dragen_mapping/dragen_output_HG004.bam ${HOME}/run_dragen_mapping/dragen_output_HG003.bam
+./real_read_deeptrio_call.sh GIRAFFE_1000GP HG002 HG004 HG003 ${HOME}/run_giraffe_mapping/giraffe_HG002.bam ${HOME}/run_giraffe_mapping/giraffe_HG004.bam ${HOME}/run_giraffe_mapping/giraffe_HG003.bam
+./real_read_deeptrio_call.sh GIRAFFE_PARENTAL HG002 HG004 HG003 ${HOME}/run_giraffe_pedigree_mapping/HG002_default_vg_pedigree_outstore/HG002_merged.bam ${HOME}/run_giraffe_pedigree_mapping/HG002_default_vg_pedigree_outstore/HG004_merged.bam ${HOME}/run_giraffe_pedigree_mapping/HG002_default_vg_pedigree_outstore/HG003_merged.bam
+
+./real_read_deeptrio_call.sh BWAMEM HG005 HG007 HG006 ${HOME}/run_bwamem_mapping/bwamem_HG005.sam ${HOME}/run_bwamem_mapping/bwamem_HG007.sam ${HOME}/run_bwamem_mapping/bwamem_HG006.sam
+./real_read_deeptrio_call.sh DRAGEN HG005 HG007 HG006 ${HOME}/run_dragen_mapping/dragen_output_HG005.bam ${HOME}/run_dragen_mapping/dragen_output_HG007.bam ${HOME}/run_dragen_mapping/dragen_output_HG006.bam
+./real_read_deeptrio_call.sh GIRAFFE_1000GP HG005 HG007 HG006 ${HOME}/run_giraffe_mapping/giraffe_HG005.bam ${HOME}/run_giraffe_mapping/giraffe_HG007.bam ${HOME}/run_giraffe_mapping/giraffe_HG006.bam
+./real_read_deeptrio_call.sh GIRAFFE_PARENTAL HG005 HG007 HG006 ${HOME}/run_giraffe_pedigree_mapping/HG005_default_vg_pedigree_outstore/HG005_merged.bam ${HOME}/run_giraffe_pedigree_mapping/HG005_default_vg_pedigree_outstore/HG007_merged.bam ${HOME}/run_giraffe_pedigree_mapping/HG005_default_vg_pedigree_outstore/HG006_merged.bam
+```
+
+Following that, run the calling on the trained deeptrio experimental BAMs of the 1000GP-based and Parental-based Giraffe alignments.
+
+```
+./real_read_deeptrio_call.sh GIRAFFE_1000GP_TRAINED_CHR20 HG002 HG004 HG003 ${HOME}/run_giraffe_mapping/giraffe_HG002.bam ${HOME}/run_giraffe_mapping/giraffe_HG004.bam ${HOME}/run_giraffe_mapping/giraffe_HG003.bam false false true
+./real_read_deeptrio_call.sh GIRAFFE_PARENTAL_TRAINED_CHR20 HG002 HG004 HG003 ${HOME}/run_giraffe_pedigree_mapping/HG002_default_vg_pedigree_outstore/HG002_merged.bam ${HOME}/run_giraffe_pedigree_mapping/HG002_default_vg_pedigree_outstore/HG004_merged.bam ${HOME}/run_giraffe_pedigree_mapping/HG002_default_vg_pedigree_outstore/HG003_merged.bam false false true
+
+./real_read_deeptrio_call.sh GIRAFFE_1000GP_TRAINED_CHR20 HG005 HG007 HG006 ${HOME}/run_giraffe_mapping/giraffe_HG005.bam ${HOME}/run_giraffe_mapping/giraffe_HG007.bam ${HOME}/run_giraffe_mapping/giraffe_HG006.bam false false true
+./real_read_deeptrio_call.sh GIRAFFE_PARENTAL_TRAINED_CHR20 HG005 HG007 HG006 ${HOME}/run_giraffe_pedigree_mapping/HG005_default_vg_pedigree_outstore/HG005_merged.bam ${HOME}/run_giraffe_pedigree_mapping/HG005_default_vg_pedigree_outstore/HG007_merged.bam ${HOME}/run_giraffe_pedigree_mapping/HG005_default_vg_pedigree_outstore/HG006_merged.bam false false true
+```
+
+Finally run the variant call evaluations on the called VCFs
+```
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_dragen_genotyping/bwamem_HG002.sam_dragen_run.vcf.gz
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_dragen_genotyping/dragen_output_HG002.bam_dragen_run.vcf.gz
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_dragen_genotyping/giraffe_HG002.bam_dragen_run.vcf.gz
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_dragen_genotyping/HG002_merged.bam_dragen_run.vcf.gz
+
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_dragen_genotyping/bwamem_HG005.sam_dragen_run.vcf.gz
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_dragen_genotyping/dragen_output_HG005.bam_dragen_run.vcf.gz
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_dragen_genotyping/giraffe_HG005.bam_dragen_run.vcf.gz
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_dragen_genotyping/HG005_merged.bam_dragen_run.vcf.gz
+
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.BWAMEM.vcf.gz true
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.DRAGEN.vcf.gz true
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.GIRAFFE_1000GP.vcf.gz true
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.GIRAFFE_PARENTAL.vcf.gz true
+
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.BWAMEM.vcf.gz true
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.DRAGEN.vcf.gz true
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.GIRAFFE_1000GP.vcf.gz true
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.GIRAFFE_PARENTAL.vcf.gz true
+
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.BWAMEM.vcf.gz true true
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.DRAGEN.vcf.gz true true
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.GIRAFFE_1000GP_TRAINED_CHR20.vcf.gz true true
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.GIRAFFE_PARENTAL_TRAINED_CHR20.vcf.gz true true
+
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.BWAMEM.vcf.gz true true
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.DRAGEN.vcf.gz true true
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.GIRAFFE_1000GP_TRAINED_CHR20.vcf.gz true true
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.GIRAFFE_PARENTAL_TRAINED_CHR20.vcf.gz true true
+
+```
+
+## Output files
+

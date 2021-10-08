@@ -113,7 +113,7 @@ for SIMULATED_READ_DIR in "${SIMULATED_READ_DIR_LIST[@]}" ; do
     sed -i "s/single//g ; s/paired/-pe/g ; s/null/0/g" giraffe_snp1kg_roc_stats.${SIMULATED_READ_DIR}.tsv'
 
     # RUN GIRAFFE PARENTAL
-    docker run -e SIMULATED_READ_DIR=${SIMULATED_READ_DIR} -v ${HOME}/run_giraffe_pedigree_mapping/HG002_vg_pedigree_outstore:${HOME}/HG002_vg_pedigree_outstore -v ${PWD}:${HOME} -w ${HOME} docker://quay.io/vgteam/vg:v1.31.0 \
+    docker run -e SIMULATED_READ_DIR=${SIMULATED_READ_DIR} -v ${HOME}/run_giraffe_pedigree_mapping/HG002_default_vg_pedigree_outstore:${HOME}/HG002_vg_pedigree_outstore -v ${PWD}:${HOME} -w ${HOME} docker://quay.io/vgteam/vg:v1.31.0 \
     /bin/bash -c 'set -o pipefail ; \
     PARAM_PRESET="default" ; \
     PAIRED="-i" ; \

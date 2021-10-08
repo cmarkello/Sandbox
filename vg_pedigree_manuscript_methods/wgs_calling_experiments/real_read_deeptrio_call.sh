@@ -128,22 +128,6 @@ else
 fi
 
 
-if [[ $RUN_CHR20_EXPERIMENT != true ]]; then
-    
-else
-    for SAMPLE_NAME in "${CHILD_NAME}" "${MATERNAL_NAME}" "${PATERNAL_NAME}"; do
-        INPUT_BAM=indel_realigned.${SAMPLE_NAME}.bam
-        docker run \
-        -e INPUT_BAM=${INPUT_BAM} \
-        -e SAMPLE_NAME=${SAMPLE_NAME} \
-        -v ${PWD}:${HOME} -w ${HOME} quay.io/ucsc_cgl/samtools:latest \
-            samtools view -@ 32 ${INPUT_BAM} -O BAM chr20 > indel_realigned.${SAMPLE_NAME}.chr20.bam
-        docker run \
-        -e SAMPLE_NAME=${SAMPLE_NAME} \
-        -v ${PWD}:${HOME} -w ${HOME} quay.io/ucsc_cgl/samtools:latest \
-            samtools index -@ 32 indel_realigned.${SAMPLE_NAME}.chr20.bam
-    done
-fi
 # Run DeepTrio genotyper on input trio BAMs
 cd ${WORKDIR}
 mkdir -p ${WORKDIR}/tmp_deeptrio
@@ -171,6 +155,18 @@ if [[ $RUN_CHR20_EXPERIMENT != true ]]; then
       --task {}'
 
 else
+    for SAMPLE_NAME in "${CHILD_NAME}" "${MATERNAL_NAME}" "${PATERNAL_NAME}"; do
+        INPUT_BAM=indel_realigned.${SAMPLE_NAME}.bam
+        docker run \
+        -e INPUT_BAM=${INPUT_BAM} \
+        -e SAMPLE_NAME=${SAMPLE_NAME} \
+        -v ${PWD}:${HOME} -w ${HOME} quay.io/ucsc_cgl/samtools:latest \
+            samtools view -@ 32 ${INPUT_BAM} -O BAM chr20 > indel_realigned.${SAMPLE_NAME}.chr20.bam
+        docker run \
+        -e SAMPLE_NAME=${SAMPLE_NAME} \
+        -v ${PWD}:${HOME} -w ${HOME} quay.io/ucsc_cgl/samtools:latest \
+            samtools index -@ 32 indel_realigned.${SAMPLE_NAME}.chr20.bam
+    done
     docker run \
     -e REF_FASTA=${REF_FASTA} \
     -e CHILD_NAME=${CHILD_NAME} \

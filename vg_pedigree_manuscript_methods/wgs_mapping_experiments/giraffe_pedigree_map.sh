@@ -24,7 +24,7 @@ function copy() {
 
 CHILD_NAME="${1}"
 MODEL_USED="${2}" # "default" or "trained"
-WORKDIR=${HOME}/run_giraffe_pedigree_mapping/${CHILD_NAME}_${MODEL_USED}
+WORKDIR=${HOME}/run_giraffe_pedigree_mapping
 WORKFLOW_INPUT_DIR=${WORKDIR}/inputs
 
 # Where should temp files go?
@@ -52,7 +52,7 @@ wget_download https://storage.googleapis.com/cmarkell-vg-wdl-dev/HG005.ped -O ${
 INPUT_CHILD_MODEL=""
 INPUT_PARENT_MODEL=""
 INPUT_DEEPVARIANT_MODEL=""
-if [[ ]]; then
+if [[ $MODEL_USED == *"trained"* ]]; then
     wget_download https://storage.googleapis.com/cmarkell-vg-wdl-dev/grch38_inputs/dt-giraffe-child-0806.tar.gz -O ${WORKFLOW_INPUT_DIR}/dt-giraffe-child-0806.tar.gz
     wget_download https://storage.googleapis.com/cmarkell-vg-wdl-dev/grch38_inputs/dt-giraffe-parent-0806.tar.gz -O ${WORKFLOW_INPUT_DIR}/dt-giraffe-parent-0806.tar.gz
     wget_download https://storage.googleapis.com/cmarkell-vg-wdl-dev/grch38_inputs/dv-giraffe-0507.tar.gz -O ${WORKFLOW_INPUT_DIR}/dv-giraffe-0507.tar.gz
