@@ -111,8 +111,10 @@ EVALUATE_CHR20=false
 WORKDIR=${HOME}/run_deeptrio_genotyping
 CHILD_NAME="${1}"
 VCF_FILE_CHILD="${2}"
-CONV_GVCF_QUERY=${3}
-EVALUATE_CHR20=${4}
+MAP_METHOD=${3}             # One of "DRAGEN", "BWAMEM", "VG_1000GP", "VG_PARENTAL"
+CALL_METHOD=${4}            # One of "DRAGEN", "DEEPTRIO_DEFAULT", "DEEPTRIO_TRAINED"
+CONV_GVCF_QUERY=${5}
+EVALUATE_CHR20=${6}
 REF_FASTA="GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.compact_decoys.fna"
 
 
@@ -155,10 +157,10 @@ fi
 
 # Evaluate Called File in All High Confident Regions
 make_nosnp1kg_bedfile ${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent${CHR20_FLAG}.bed ALL.GRCh38.genotypes.20170504.no_segdups_gt10kb.sites.sorted.vcf.gz ${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.NO_SNP1KG.specific${CHR20_FLAG}.bed
-run_happy happy_vcfeval_output_${CHILD_NAME}_allhighconfregions${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1_GRCh38_1_22_v4.2.1_benchmark_noinconsistent${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA}
-run_happy happy_vcfeval_output_${CHILD_NAME}_allhighconfregions_NOSNP1KG${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.NO_SNP1KG.specific${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA}
-run_rtgvcfeval rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1_GRCh38_1_22_v4.2.1_benchmark_noinconsistent${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA}
-run_rtgvcfeval rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions_NOSNP1KG${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.NO_SNP1KG.specific${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA}
+run_happy happy_vcfeval_output_${CHILD_NAME}_allhighconfregions_${MAP_METHOD}_${CALL_METHOD}${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1_GRCh38_1_22_v4.2.1_benchmark_noinconsistent${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA}
+run_happy happy_vcfeval_output_${CHILD_NAME}_allhighconfregions_NOSNP1KG_${MAP_METHOD}_${CALL_METHOD}${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.NO_SNP1KG.specific${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA}
+run_rtgvcfeval rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions_${MAP_METHOD}_${CALL_METHOD}${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1_GRCh38_1_22_v4.2.1_benchmark_noinconsistent${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA}
+run_rtgvcfeval rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions_NOSNP1KG_${MAP_METHOD}_${CALL_METHOD}${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.NO_SNP1KG.specific${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA}
 
 # Evaluate Called File in Difficult Regions
 for REGION in "MHC" "alllowmapandsegdupregions" "alldifficultregions" ; do
@@ -166,10 +168,10 @@ for REGION in "MHC" "alllowmapandsegdupregions" "alldifficultregions" ; do
     make_bedfile ${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent${CHR20_FLAG}.bed GRCh38_${REGION}.bed.gz ${CHILD_NAME}_GRCh38_v4.2.1.${REGION}${CHR20_FLAG}.bed
     make_bedfile ${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.NO_SNP1KG.specific${CHR20_FLAG}.bed GRCh38_${REGION}.bed.gz ${CHILD_NAME}_GRCh38_v4.2.1.NO_SNP1KG.specific.${REGION}${CHR20_FLAG}.bed
 
-    run_happy happy_vcfeval_output_${CHILD_NAME}_${REGION}${CHR20_FLAG}.bed "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1.${REGION}${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA} ${CONV_GVCF_QUERY}
-    run_happy happy_vcfeval_output_${CHILD_NAME}_${REGION}_NOSNP1KG${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1.NO_SNP1KG.specific.${REGION}${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA} ${CONV_GVCF_QUERY}
-    run_rtgvcfeval rtg_vcfeval_output_${CHILD_NAME}_${REGION}${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1.${REGION}${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA}
-    run_rtgvcfeval rtg_vcfeval_output_${CHILD_NAME}_${REGION}_NOSNP1KG${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1.NO_SNP1KG.specific.${REGION}${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA}
+    run_happy happy_vcfeval_output_${CHILD_NAME}_${REGION}_${MAP_METHOD}_${CALL_METHOD}${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1.${REGION}${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA} ${CONV_GVCF_QUERY}
+    run_happy happy_vcfeval_output_${CHILD_NAME}_${REGION}_NOSNP1KG_${MAP_METHOD}_${CALL_METHOD}${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1.NO_SNP1KG.specific.${REGION}${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA} ${CONV_GVCF_QUERY}
+    run_rtgvcfeval rtg_vcfeval_output_${CHILD_NAME}_${REGION}_${MAP_METHOD}_${CALL_METHOD}${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1.${REGION}${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA}
+    run_rtgvcfeval rtg_vcfeval_output_${CHILD_NAME}_${REGION}_NOSNP1KG_${MAP_METHOD}_${CALL_METHOD}${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1.NO_SNP1KG.specific.${REGION}${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA}
 done
 
 if [[ ${CHILD_NAME} == *"HG002"* ]]; then
@@ -181,10 +183,10 @@ if [[ ${CHILD_NAME} == *"HG002"* ]]; then
         grep 'chr20' "${WORKDIR}/${CHILD_NAME}_GRCh38_v4.2.1.CMRG.bed" > "${WORKDIR}/${CHILD_NAME}_GRCh38_v4.2.1.${REGION}${CHR20_FLAG}.bed"
     fi
     make_nosnp1kg_bedfile ${CHILD_NAME}_GRCh38_v4.2.1.${REGION}${CHR20_FLAG}.bed ALL.GRCh38.genotypes.20170504.no_segdups_gt10kb.sites.sorted.vcf.gz ${CHILD_NAME}_GRCh38_v4.2.1.NO_SNP1KG.specific.${REGION}${CHR20_FLAG}.bed
-    run_happy happy_vcfeval_output_${CHILD_NAME}_allhighconfregions${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.CMRG.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1.${REGION}${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA} ${CONV_GVCF_QUERY}
-    run_happy happy_vcfeval_output_${CHILD_NAME}_allhighconfregions_NOSNP1KG${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.CMRG.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1.NO_SNP1KG.specific.${REGION}${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA} ${CONV_GVCF_QUERY}
-    run_rtgvcfeval rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.CMRG.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1.${REGION}${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA}
-    run_rtgvcfeval rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions_NOSNP1KG${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.CMRG.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1.NO_SNP1KG.specific.${REGION}${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA}
+    run_happy happy_vcfeval_output_${CHILD_NAME}_allhighconfregions_${MAP_METHOD}_${CALL_METHOD}${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.CMRG.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1.${REGION}${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA} ${CONV_GVCF_QUERY}
+    run_happy happy_vcfeval_output_${CHILD_NAME}_allhighconfregions_NOSNP1KG_${MAP_METHOD}_${CALL_METHOD}${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.CMRG.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1.NO_SNP1KG.specific.${REGION}${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA} ${CONV_GVCF_QUERY}
+    run_rtgvcfeval rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions_${MAP_METHOD}_${CALL_METHOD}${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.CMRG.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1.${REGION}${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA}
+    run_rtgvcfeval rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions_NOSNP1KG_${MAP_METHOD}_${CALL_METHOD}${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.CMRG.vcf.gz" "${CHILD_NAME}_GRCh38_v4.2.1.NO_SNP1KG.specific.${REGION}${CHR20_FLAG}.bed" "${CHILD_NAME}.vcf.gz" ${REF_FASTA}
 fi
 
 

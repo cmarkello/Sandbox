@@ -39,36 +39,44 @@ Following that, run the calling on the trained deeptrio experimental BAMs of the
 
 Finally run the variant call evaluations on the called VCFs
 ```
-./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_dragen_genotyping/bwamem_HG002.sam_dragen_run.vcf.gz
-./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_dragen_genotyping/dragen_output_HG002.bam_dragen_run.vcf.gz
-./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_dragen_genotyping/giraffe_HG002.bam_dragen_run.vcf.gz
-./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_dragen_genotyping/HG002_merged.bam_dragen_run.vcf.gz
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_dragen_genotyping/bwamem_HG002.sam_dragen_run.vcf.gz BWAMEM DRAGEN
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_dragen_genotyping/dragen_output_HG002.bam_dragen_run.vcf.gz DRAGEN DRAGEN
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_dragen_genotyping/giraffe_HG002.bam_dragen_run.vcf.gz VG_1000GP DRAGEN
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_dragen_genotyping/HG002_merged.bam_dragen_run.vcf.gz VG_PARENTAL DRAGEN
 
-./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_dragen_genotyping/bwamem_HG005.sam_dragen_run.vcf.gz
-./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_dragen_genotyping/dragen_output_HG005.bam_dragen_run.vcf.gz
-./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_dragen_genotyping/giraffe_HG005.bam_dragen_run.vcf.gz
-./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_dragen_genotyping/HG005_merged.bam_dragen_run.vcf.gz
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_dragen_genotyping/bwamem_HG005.sam_dragen_run.vcf.gz BWAMEM DRAGEN
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_dragen_genotyping/dragen_output_HG005.bam_dragen_run.vcf.gz DRAGEN DRAGEN
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_dragen_genotyping/giraffe_HG005.bam_dragen_run.vcf.gz VG_1000GP DRAGEN
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_dragen_genotyping/HG005_merged.bam_dragen_run.vcf.gz VG_PARENTAL DRAGEN
 
-./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.BWAMEM.vcf.gz true
-./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.DRAGEN.vcf.gz true
-./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.GIRAFFE_1000GP.vcf.gz true
-./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.GIRAFFE_PARENTAL.vcf.gz true
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.BWAMEM.vcf.gz BWAMEM DEEPTRIO_DEFAULT true
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.DRAGEN.vcf.gz DRAGEN DEEPTRIO_DEFAULT true
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.GIRAFFE_1000GP.vcf.gz VG_1000GP DEEPTRIO_DEFAULT true
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.GIRAFFE_PARENTAL.vcf.gz VG_PARENTAL DEEPTRIO_DEFAULT true
 
-./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.BWAMEM.vcf.gz true
-./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.DRAGEN.vcf.gz true
-./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.GIRAFFE_1000GP.vcf.gz true
-./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.GIRAFFE_PARENTAL.vcf.gz true
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.BWAMEM.vcf.gz BWAMEM DEEPTRIO_DEFAULT true
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.DRAGEN.vcf.gz DRAGEN DEEPTRIO_DEFAULT true
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.GIRAFFE_1000GP.vcf.gz VG_1000GP DEEPTRIO_DEFAULT true
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.GIRAFFE_PARENTAL.vcf.gz VG_PARENTAL DEEPTRIO_DEFAULT true
 
-./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.BWAMEM.vcf.gz true true
-./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.DRAGEN.vcf.gz true true
-./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.GIRAFFE_1000GP_TRAINED_CHR20.vcf.gz true true
-./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.GIRAFFE_PARENTAL_TRAINED_CHR20.vcf.gz true true
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.BWAMEM.vcf.gz BWAMEM DEEPTRIO_DEFAULT true true
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.DRAGEN.vcf.gz DRAGEN DEEPTRIO_DEFAULT true true
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.GIRAFFE_1000GP_TRAINED_CHR20.vcf.gz VG_1000GP DEEPTRIO_TRAINED true true
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.GIRAFFE_PARENTAL_TRAINED_CHR20.vcf.gz VG_PARENTAL DEEPTRIO_TRAINED true true
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.GIRAFFE_1000GP.vcf.gz VG_1000GP DEEPTRIO_DEFAULT true true
+./real_read_variant_call_evaluation.sh HG002 ${HOME}/run_deeptrio_genotyping/HG002_DEEPTRIO.abra_gatk_targets.GIRAFFE_PARENTAL.vcf.gz VG_PARENTAL DEEPTRIO_DEFAULT true true
 
-./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.BWAMEM.vcf.gz true true
-./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.DRAGEN.vcf.gz true true
-./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.GIRAFFE_1000GP_TRAINED_CHR20.vcf.gz true true
-./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.GIRAFFE_PARENTAL_TRAINED_CHR20.vcf.gz true true
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.BWAMEM.vcf.gz BWAMEM DEEPTRIO_DEFAULT true true
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.DRAGEN.vcf.gz DRAGEN DEEPTRIO_DEFAULT true true
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.GIRAFFE_1000GP_TRAINED_CHR20.vcf.gz VG_1000GP DEEPTRIO_TRAINED true true
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.GIRAFFE_PARENTAL_TRAINED_CHR20.vcf.gz VG_PARENTAL DEEPTRIO_TRAINED true true
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.GIRAFFE_1000GP.vcf.gz VG_1000GP DEEPTRIO_DEFAULT true true
+./real_read_variant_call_evaluation.sh HG005 ${HOME}/run_deeptrio_genotyping/HG005_DEEPTRIO.abra_gatk_targets.GIRAFFE_PARENTAL.vcf.gz VG_PARENTAL DEEPTRIO_DEFAULT true true
+```
 
+Render the calculated roc curves into plots
+```
+./real_read_variant_call_evaluation.ROC_plots.sh
 ```
 
 ## Output files
