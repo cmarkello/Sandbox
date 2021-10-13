@@ -140,7 +140,8 @@ cd $WORKDIR
 VCF_FILE_CHILD_BASENAME=$(basename ${VCF_FILE_CHILD})
 copy ${VCF_FILE_CHILD} "${WORKDIR}/${VCF_FILE_CHILD_BASENAME}"
 wget_download https://storage.googleapis.com/cmarkell-vg-wdl-dev/grch38_inputs/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.compact_decoys.fna "${WORKDIR}/${REF_FASTA}"
-wget_download https://storage.googleapis.com/cmarkell-vg-wdl-dev/grch38_inputs/ALL.GRCh38.genotypes.20170504.no_segdups_gt10kb.sites.sorted.vcf.gz "${WORKDIR}/ALL.GRCh38.genotypes.20170504.no_segdups_gt10kb.sites.sorted.vcf.gz"
+wget_download https://storage.googleapis.com/cmarkell-vg-wdl-dev/grch38_inputs/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.compact_decoys.fna.fai "${WORKDIR}/${REF_FASTA}.fai"
+wget_download https://storage.googleapis.com/cmarkell-vg-wdl-dev/grch38_inputs/ALL.GRCh38.genotypes.20170504.no_segdups_gt10kb.renamed.sites.sorted.vcf.gz "${WORKDIR}/ALL.GRCh38.genotypes.20170504.no_segdups_gt10kb.renamed.sites.sorted.vcf.gz"
 wget_download https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/genome-stratifications/v2.0/GRCh38/union/GRCh38_alldifficultregions.bed.gz "${WORKDIR}/GRCh38_alldifficultregions.bed.gz"
 wget_download https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/genome-stratifications/v2.0/GRCh38/union/GRCh38_alllowmapandsegdupregions.bed.gz "${WORKDIR}/GRCh38_alllowmapandsegdupregions.bed.gz"
 wget_download https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/genome-stratifications/v2.0/GRCh38/OtherDifficult/GRCh38_MHC.bed.gz "${WORKDIR}/GRCh38_MHC.bed.gz"
@@ -169,7 +170,7 @@ if [ "${EVALUATE_CHR20}" = true ]; then
 fi
 
 # Evaluate Called File in All High Confident Regions
-make_nosnp1kg_bedfile ${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent${CHR20_FLAG}.bed ALL.GRCh38.genotypes.20170504.no_segdups_gt10kb.sites.sorted.vcf.gz ${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.NO_SNP1KG.specific${CHR20_FLAG}.bed
+make_nosnp1kg_bedfile ${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent${CHR20_FLAG}.bed ALL.GRCh38.genotypes.20170504.no_segdups_gt10kb.renamed.sites.sorted.vcf.gz ${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.NO_SNP1KG.specific${CHR20_FLAG}.bed
 run_happy happy_vcfeval_output_${CHILD_NAME}_allhighconfregions_${MAP_METHOD}_${CALL_METHOD}${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent${CHR20_FLAG}.bed" "${VCF_FILE_CHILD_BASENAME}" ${REF_FASTA}
 run_happy happy_vcfeval_output_${CHILD_NAME}_allhighconfregions_NOSNP1KG_${MAP_METHOD}_${CALL_METHOD}${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.NO_SNP1KG.specific${CHR20_FLAG}.bed" "${VCF_FILE_CHILD_BASENAME}" ${REF_FASTA}
 run_rtgvcfeval rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions_${MAP_METHOD}_${CALL_METHOD}${CHR20_FLAG} "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark.vcf.gz" "${CHILD_NAME}_GRCh38_1_22_v4.2.1_benchmark_noinconsistent${CHR20_FLAG}.bed" "${VCF_FILE_CHILD_BASENAME}" ${REF_FASTA}

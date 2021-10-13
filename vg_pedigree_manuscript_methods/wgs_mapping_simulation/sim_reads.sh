@@ -57,20 +57,20 @@ wget_download https://storage.googleapis.com/cmarkell-vg-wdl-dev/grch38_inputs/A
 cd $WORKDIR
 
 make_bedfile HG002_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.bed ALL.GRCh38.genotypes.20170504.rename.sites.sorted.vcf.gz HG002_snp1kg_liftover_grch38.intersect.bed
-docker run -v ${PWD}:${HOME} -w ${HOME} quay.io/biocontainers/bedtools:2.27.0--1
-bedtools slop \
+docker run -v ${PWD}:${HOME} -w ${HOME} quay.io/biocontainers/bedtools:2.27.0--1 \
+/bin/sh -c 'bedtools slop \
 -i HG002_snp1kg_liftover_grch38.intersect.bed \
 -g bedtools2/genomes/human.hg38.genome \
 -b 160 \
-> HG002_snp1kg_liftover_grch38.intersect.160bp_slop.bed
+> HG002_snp1kg_liftover_grch38.intersect.160bp_slop.bed'
 
 make_bedfile HG002_GRCh38_CMRG_smallvar_v1.00.bed ALL.GRCh38.genotypes.20170504.rename.sites.sorted.vcf.gz HG002_snp1kg_liftover_grch38.CMRG.intersect.bed
-docker run -v ${PWD}:${HOME} -w ${HOME} quay.io/biocontainers/bedtools:2.27.0--1
-bedtools slop \
+docker run -v ${PWD}:${HOME} -w ${HOME} quay.io/biocontainers/bedtools:2.27.0--1 \
+/bin/sh -c 'bedtools slop \
 -i HG002_snp1kg_liftover_grch38.CMRG.intersect.bed \
 -g bedtools2/genomes/human.hg38.genome \
 -b 160 \
-> HG002_snp1kg_liftover_grch38.CMRG.intersect.160bp_slop.bed
+> HG002_snp1kg_liftover_grch38.CMRG.intersect.160bp_slop.bed'
 
 make_nosnp1kg_bedfile HG002_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.bed HG002_snp1kg_liftover_grch38.intersect.160bp_slop.bed HG002_GRCh38_1_22_v4.2.1_benchmark_noinconsistent.NO_SNP1KG.bed
 make_nosnp1kg_bedfile HG002_GRCh38_CMRG_smallvar_v1.00.bed HG002_snp1kg_liftover_grch38.CMRG.intersect.160bp_slop.bed HG002_GRCh38_CMRG_smallvar_v1.00.NO_SNP1KG.bed
