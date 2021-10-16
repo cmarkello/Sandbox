@@ -116,14 +116,14 @@ for CHILD_NAME in "HG002" "HG005"; do
         if [[ ${SNP1KG_EXCLUDED} == *"_NOSNP1KG"* ]]; then
             if [[ ${CHILD_NAME} == *"HG002"* ]]; then
                 ZOOM_RANGE_X_START=0
-                ZOOM_RANGE_Y_START=203000
+                ZOOM_RANGE_Y_START=329000
                 ZOOM_RANGE_X_END=7000
-                ZOOM_RANGE_Y_END=210000
+                ZOOM_RANGE_Y_END=336000
             elif [[ ${CHILD_NAME} == *"HG005"* ]]; then
                 ZOOM_RANGE_X_START=0
-                ZOOM_RANGE_Y_START=161000
+                ZOOM_RANGE_Y_START=286000
                 ZOOM_RANGE_X_END=7000
-                ZOOM_RANGE_Y_END=168000
+                ZOOM_RANGE_Y_END=293000
             fi
             TITLE="${CHILD_NAME} v4.2.1 WGS High Confidence non-1000GP Regions DeepTrio Calls"
         else
@@ -134,9 +134,9 @@ for CHILD_NAME in "HG002" "HG005"; do
                 ZOOM_RANGE_Y_END=3875000
             elif [[ ${CHILD_NAME} == *"HG005"* ]]; then
                 ZOOM_RANGE_X_START=0
-                ZOOM_RANGE_Y_START=3668500
+                ZOOM_RANGE_Y_START=3667500
                 ZOOM_RANGE_X_END=9000
-                ZOOM_RANGE_Y_END=3677500
+                ZOOM_RANGE_Y_END=3676500
             fi
             TITLE="${CHILD_NAME} v4.2.1 WGS High Confidence Regions DeepTrio Calls"
         fi
@@ -158,14 +158,14 @@ for CHILD_NAME in "HG002" "HG005"; do
         if [[ ${SNP1KG_EXCLUDED} == *"_NOSNP1KG"* ]]; then
             if [[ ${CHILD_NAME} == *"HG002"* ]]; then
                 ZOOM_RANGE_X_START=0
-                ZOOM_RANGE_Y_START=4670
+                ZOOM_RANGE_Y_START=5910
                 ZOOM_RANGE_X_END=150
-                ZOOM_RANGE_Y_END=4820
+                ZOOM_RANGE_Y_END=6060
             elif [[ ${CHILD_NAME} == *"HG005"* ]]; then
                 ZOOM_RANGE_X_START=0
-                ZOOM_RANGE_Y_START=3250
+                ZOOM_RANGE_Y_START=4300
                 ZOOM_RANGE_X_END=200
-                ZOOM_RANGE_Y_END=3450
+                ZOOM_RANGE_Y_END=4500
             fi
             TITLE="${CHILD_NAME} v4.2.1 Chromosome 20 High Confidence non-1000GP Regions Trained DeepTrio Calls"
         else
