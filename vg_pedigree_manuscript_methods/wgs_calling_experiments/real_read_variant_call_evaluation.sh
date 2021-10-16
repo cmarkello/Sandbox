@@ -62,6 +62,12 @@ function run_happy() {
         if [ "${CONV_GVCF_QUERY}" = true ]; then
             GVCF_QUERY_COMMAND="--convert-gvcf-query"
         fi
+        if [ ! -e "${TRUTH_VCF}.tbi" ]; then
+            docker run \
+            -e TRUTH_VCF=${TRUTH_VCF} \
+            -v ${PWD}:${HOME} -w ${HOME} realtimegenomics/rtg-tools:3.12.1 \
+                rtg index ${TRUTH_VCF}
+        fi
         if [ ! -e "${CALLED_VCF}.tbi" ]; then
             docker run \
             -e CALLED_VCF=${CALLED_VCF} \
@@ -96,6 +102,12 @@ function run_rtgvcfeval() {
         TRUTH_BED=${3}
         CALLED_VCF=${4}
         REF_FASTA=${5}
+        if [ ! -e "${TRUTH_VCF}.tbi" ]; then
+            docker run \
+            -e TRUTH_VCF=${TRUTH_VCF} \
+            -v ${PWD}:${HOME} -w ${HOME} realtimegenomics/rtg-tools:3.12.1 \
+                rtg index ${TRUTH_VCF}
+        fi
         if [ ! -e "${CALLED_VCF}.tbi" ]; then
             docker run \
             -e CALLED_VCF=${CALLED_VCF} \

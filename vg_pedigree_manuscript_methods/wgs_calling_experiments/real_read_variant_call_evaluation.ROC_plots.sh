@@ -25,7 +25,7 @@ function copy() {
 function run_default_rtgrocplot() {
     if [ ! -e "${1}.svg" ] ; then
         OUT_NAME=${1}
-        TITLE=${2}
+        TITLE="${2}"
         ZOOM_RANGE_X_START=${3}
         ZOOM_RANGE_X_END=${4}
         ZOOM_RANGE_Y_START=${5}
@@ -36,7 +36,7 @@ function run_default_rtgrocplot() {
         VG_PARENTAL_DEFAULT_RTG_ROC=${10}
         docker run \
         -e OUT_NAME=${OUT_NAME} \
-        -e TITLE=${TITLE} \
+        -e TITLE="${TITLE}" \
         -e ZOOM_RANGE_X_START=${ZOOM_RANGE_X_START} \
         -e ZOOM_RANGE_X_END=${ZOOM_RANGE_X_END} \
         -e ZOOM_RANGE_Y_START=${ZOOM_RANGE_Y_START} \
@@ -47,7 +47,7 @@ function run_default_rtgrocplot() {
         -e VG_PARENTAL_DEFAULT_RTG_ROC=${VG_PARENTAL_DEFAULT_RTG_ROC} \
         -v ${PWD}:${HOME} -w ${HOME} realtimegenomics/rtg-tools:3.8.4 \
             rtg rocplot \
-            --title ${TITLE} \
+            --title "${TITLE}" \
             --plain \
             --zoom=${ZOOM_RANGE_X_START},${ZOOM_RANGE_Y_START},${ZOOM_RANGE_X_END},${ZOOM_RANGE_Y_END} \
             --curve=${BWAMEM_RTG_ROC}=bwamem \
@@ -61,7 +61,7 @@ function run_default_rtgrocplot() {
 function run_trained_chr20_rtgrocplot() {
     if [ ! -e "${1}.svg" ] ; then
         OUT_NAME=${1}
-        TITLE=${2}
+        TITLE="${2}"
         ZOOM_RANGE_X_START=${3}
         ZOOM_RANGE_X_END=${4}
         ZOOM_RANGE_Y_START=${5}
@@ -74,7 +74,7 @@ function run_trained_chr20_rtgrocplot() {
         VG_PARENTAL_TRAINED_RTG_ROC=${12}
         docker run \
         -e OUT_NAME=${OUT_NAME} \
-        -e TITLE=${TITLE} \
+        -e TITLE="${TITLE}" \
         -e ZOOM_RANGE_X_START=${ZOOM_RANGE_X_START} \
         -e ZOOM_RANGE_X_END=${ZOOM_RANGE_X_END} \
         -e ZOOM_RANGE_Y_START=${ZOOM_RANGE_Y_START} \
@@ -87,7 +87,7 @@ function run_trained_chr20_rtgrocplot() {
         -e VG_PARENTAL_TRAINED_RTG_ROC=${VG_PARENTAL_TRAINED_RTG_ROC} \
         -v ${PWD}:${HOME} -w ${HOME} realtimegenomics/rtg-tools:3.8.4 \
             rtg rocplot \
-            --title ${TITLE} \
+            --title "${TITLE}" \
             --plain \
             --zoom=${ZOOM_RANGE_X_START},${ZOOM_RANGE_Y_START},${ZOOM_RANGE_X_END},${ZOOM_RANGE_Y_END} \
             --curve=${BWAMEM_RTG_ROC}=bwamem \
@@ -144,10 +144,10 @@ for CHILD_NAME in "HG002" "HG005"; do
             ${CHILD_NAME}${SNP1KG_EXCLUDED}_deeptrio_default \
             ${TITLE} \
             ${ZOOM_RANGE_X_START} ${ZOOM_RANGE_X_END} ${ZOOM_RANGE_Y_START} ${ZOOM_RANGE_Y_END} \
-            "rtg_vcfeval_output_${CHILD_NAME}${SNP1KG_EXCLUDED}_DRAGEN_DEEPTRIO_DEFAULT/weighted_roc.tsv.gz" \
-            "rtg_vcfeval_output_${CHILD_NAME}${SNP1KG_EXCLUDED}_BWAMEM_DEEPTRIO_DEFAULT/weighted_roc.tsv.gz" \
-            "rtg_vcfeval_output_${CHILD_NAME}${SNP1KG_EXCLUDED}_VG_1000GP_DEEPTRIO_DEFAULT/weighted_roc.tsv.gz" \
-            "rtg_vcfeval_output_${CHILD_NAME}${SNP1KG_EXCLUDED}_VG_PARENTAL_DEEPTRIO_DEFAULT/weighted_roc.tsv.gz" \
+            "rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions${SNP1KG_EXCLUDED}_DRAGEN_DEEPTRIO_DEFAULT/weighted_roc.tsv.gz" \
+            "rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions${SNP1KG_EXCLUDED}_BWAMEM_DEEPTRIO_DEFAULT/weighted_roc.tsv.gz" \
+            "rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions${SNP1KG_EXCLUDED}_VG_1000GP_DEEPTRIO_DEFAULT/weighted_roc.tsv.gz" \
+            "rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions${SNP1KG_EXCLUDED}_VG_PARENTAL_DEEPTRIO_DEFAULT/weighted_roc.tsv.gz" \
     done
 done
 
@@ -186,11 +186,11 @@ for CHILD_NAME in "HG002" "HG005"; do
             ${CHILD_NAME}${SNP1KG_EXCLUDED}_deeptrio_trained_chr20 \
             ${TITLE} \
             ${ZOOM_RANGE_X_START} ${ZOOM_RANGE_X_END} ${ZOOM_RANGE_Y_START} ${ZOOM_RANGE_Y_END} \
-            "rtg_vcfeval_output_${CHILD_NAME}${SNP1KG_EXCLUDED}_DRAGEN_DEEPTRIO_DEFAULT_chr20/weighted_roc.tsv.gz" \
-            "rtg_vcfeval_output_${CHILD_NAME}${SNP1KG_EXCLUDED}_BWAMEM_DEEPTRIO_DEFAULT_chr20/weighted_roc.tsv.gz" \
-            "rtg_vcfeval_output_${CHILD_NAME}${SNP1KG_EXCLUDED}_VG_1000GP_DEEPTRIO_DEFAULT_chr20/weighted_roc.tsv.gz" \
-            "rtg_vcfeval_output_${CHILD_NAME}${SNP1KG_EXCLUDED}_VG_1000GP_DEEPTRIO_TRAINED_chr20/weighted_roc.tsv.gz" \
-            "rtg_vcfeval_output_${CHILD_NAME}${SNP1KG_EXCLUDED}_VG_PARENTAL_DEEPTRIO_DEFAULT_chr20/weighted_roc.tsv.gz" \
-            "rtg_vcfeval_output_${CHILD_NAME}${SNP1KG_EXCLUDED}_VG_PARENTAL_DEEPTRIO_TRAINED_chr20/weighted_roc.tsv.gz" \
+            "rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions${SNP1KG_EXCLUDED}_DRAGEN_DEEPTRIO_DEFAULT_chr20/weighted_roc.tsv.gz" \
+            "rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions${SNP1KG_EXCLUDED}_BWAMEM_DEEPTRIO_DEFAULT_chr20/weighted_roc.tsv.gz" \
+            "rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions${SNP1KG_EXCLUDED}_VG_1000GP_DEEPTRIO_DEFAULT_chr20/weighted_roc.tsv.gz" \
+            "rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions${SNP1KG_EXCLUDED}_VG_1000GP_DEEPTRIO_TRAINED_chr20/weighted_roc.tsv.gz" \
+            "rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions${SNP1KG_EXCLUDED}_VG_PARENTAL_DEEPTRIO_DEFAULT_chr20/weighted_roc.tsv.gz" \
+            "rtg_vcfeval_output_${CHILD_NAME}_allhighconfregions${SNP1KG_EXCLUDED}_VG_PARENTAL_DEEPTRIO_TRAINED_chr20/weighted_roc.tsv.gz" \
     done
 done
