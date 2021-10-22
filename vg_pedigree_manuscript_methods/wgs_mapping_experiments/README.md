@@ -1,3 +1,7 @@
+# Real Read Mapping Scripts
+
+The scripts in this directory run the BWA-MEM, DRAGEN, VG Giraffe, and VG Pedigree mappers and workflows against real reads from the Genome-in-a-Bottle HG002 and HG005 samples.
+
 ## Running the scripts
 
 First, run the bwa mem mapper on the HG002 and HG005 trio sample set.
@@ -30,4 +34,9 @@ And another, each using the trained deeptrio and deepvariant models.
 ```
 
 ## Output files
+
+BWA-MEM alignment files will be located in `${HOME}/run_bwamem_mapping`.
+DRAGEN alignment files will be located in `${HOME}/run_dragen_mapping`.
+VG Giraffe alignments files will be located in `${HOME}/run_giraffe_mapping`.
+VG Pedigree workflow alignment files will be located in `${HOME}/run_giraffe_pedigree_mapping`.
 

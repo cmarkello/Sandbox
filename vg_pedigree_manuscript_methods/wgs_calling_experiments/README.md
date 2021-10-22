@@ -1,3 +1,7 @@
+# Variant Calling and Evaluation Scripts
+
+These scripts run the DRAGEN and DeepTrio variant callers on the mapped output of BWA-MEM, DRAGEN, VG Giraffe, and VG Pedigree alignments located in `${HOME}/run_bwamem_mapping`, `${HOME}/run_dragen_mapping`, `${HOME}/run_giraffe_mapping`, and `${HOME}/run_giraffe_pedigree_mapping` respectively.
+
 ## Running the scripts
 
 First, run the Illumina DRAGEN variant caller on the HG002 and HG005 sample sets of alignments.
@@ -80,4 +84,24 @@ Render the calculated roc curves into plots
 ```
 
 ## Output files
+
+All outputs will be located in the following directory `${HOME}/run_genotyping`.
+DRAGEN-based caller outputs will be located in files named `${ALIGNER}_${SAMPLE}.*am_dragen_run.vcf.gz`
+where `${ALIGNER}` is one of `bwamem`, `dragen`, `giraffe`, or `${SAMPLE}_merged`
+and `${SAMPLE}` is one of `HG002` or `HG005`.
+
+
+DeepTrio-based caller outputs will be located in files named `${SAMPLE}_DEEPTRIO.abra_gatk_targets.${ALIGNER}.vcf.gz`
+where `${ALIGNER}` is one of `BWAMEM`, `DRAGEN`, `GIRAFFE_1000GP`, `GIRAFFE_1000GP_TRAINED_CHR20`, `GIRAFFE_PARENTAL`, or `GIRAFFE_PARENTAL_TRAINED_CHR20`
+and `${SAMPLE}` is one of `HG002` or `HG005`.
+
+Variant calling evaluation outputs will be located in files named `${EVAL}_vcfeval_output_${SAMPLE}_${REGION}_${ALIGNER}_${CALLER}${CHR20_FLAG}`
+where `${EVAL}` is one of `happy` or `rtg`
+and `${SAMPLE}` is one of `HG002` or `HG005`
+and `${REGION}` is one of `allhighconfregions`, `alldifficultregions`, `alllowmapandsegdupregions`, `MHC`, or `CMRG`
+and `${ALIGNER}` is one of `BWAMEM`, `DRAGEN`, `VG_1000GP`, or `VG_PARENTAL`
+and `${CALLER}` is one of `DRAGEN`, `DEEPTRIO_DEFAULT`, `DEEPTRIO_TRAINED_chr20`.
+
+
+
 

@@ -132,7 +132,7 @@ function run_rtgvcfeval() {
 
 CONV_GVCF_QUERY=false
 EVALUATE_CHR20=false
-WORKDIR=${HOME}/run_deeptrio_genotyping
+WORKDIR=${HOME}/run_genotyping
 CHILD_NAME="${1}"
 VCF_FILE_CHILD="${2}"
 MAP_METHOD=${3}             # One of "DRAGEN", "BWAMEM", "VG_1000GP", "VG_PARENTAL"

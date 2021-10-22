@@ -1,3 +1,7 @@
+# Simulated Read Mapping and Evaluation Scripts
+
+These scripts runs sample graph construction, simulates reads from that graph, and runs mapping and evaluation of the simulated reads against the BWA-MEM aligner, the VG Giraffe graph aligner against the Primary and 1000GP graph and Parental graph.
+
 ## Running the scripts
 
 First, run the construction workflow to generate the sample graph for read simulation.
@@ -27,4 +31,6 @@ Finally run the roc-plotting scripts to render mapping evaluation ROC curve plot
 ```
 
 ## Output files
+
+All mapping output BAM and GAM files, simulated read FASTQ files, and evaluation output JSON and SVG files will be located in `${HOME}/run_sim_reads`.
 

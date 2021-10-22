@@ -100,7 +100,7 @@ function run_trained_chr20_rtgrocplot() {
     fi
 }
 
-WORKDIR=${HOME}/run_deeptrio_genotyping
+WORKDIR=${HOME}/run_genotyping
 
 
 # Where should temp files go?

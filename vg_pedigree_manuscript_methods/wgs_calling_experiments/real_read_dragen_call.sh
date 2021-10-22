@@ -23,7 +23,7 @@ function copy() {
 }
 
 INDEL_REALIGN=true
-WORKDIR=${HOME}/run_dragen_genotyping
+WORKDIR=${HOME}/run_genotyping
 SAMPLE_NAME="${1}"
 BAM_FILE="${2}"
 INDEL_REALIGN=${3}

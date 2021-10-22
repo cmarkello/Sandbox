@@ -25,7 +25,7 @@ function copy() {
 INDEL_REALIGN_BAMS=true
 USE_DEFAULT_MODEL=true
 RUN_CHR20_EXPERIMENT=false
-WORKDIR=${HOME}/run_deeptrio_genotyping
+WORKDIR=${HOME}/run_genotyping
 OUTNAME="${1}"
 CHILD_NAME="${2}"
 MATERNAL_NAME="${3}"

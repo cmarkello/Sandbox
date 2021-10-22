@@ -119,10 +119,10 @@ time toil-vg pedigree \
 --setEnv PATH=$PATH \
 --disableProgress \
 --realTimeLogging \
---batchSystem slurm \
+--batchSystem singleMachine \
 --statePollingWait 120 \
 --rescueJobsFrequency 120 \
---container Singularity \
+--container Docker \
 --logInfo \
 --logFile ${LOGFILE} \
 --workDir ${TMPDIR} \

@@ -71,7 +71,7 @@ toil-vg construct \
 ${TOILVG_JOBSTORE} \
 ${TOILVG_OUTSTORE} \
 --batchSystem singleMachine \
---container Singularity \
+--container Docker \
 --vg_docker quay.io/vgteam/vg:ci-2890-655a9622c3d60e87f14b88d943fbd8554214a975 \
 --realTimeLogging \
 --logInfo \

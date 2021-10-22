@@ -62,7 +62,7 @@ toil-vg construct \
 ${TOILVG_JOBSTORE} \
 ${TOILVG_OUTSTORE} \
 --batchSystem singleMachine \
---container Singularity \
+--container Docker \
 --logInfo \
 --vg_docker 'quay.io/vgteam/vg:ci-2351-a64b70c1f9345f0821e3f3a600eb8bbf4fe44bf2' \
 --workDir ${WORK_DIR}/tmp_primary \
