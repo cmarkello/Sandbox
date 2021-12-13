@@ -37,6 +37,9 @@ workflow vgMultiMap {
         Int CALL_CORES = 8
         Int CALL_DISK = 40
         Int CALL_MEM = 50
+        File? REFERENCE_FILE
+        File? REFERENCE_INDEX_FILE
+        File? REFERENCE_DICT_FILE
     }
 
     # Split input reads into chunks for parallelized mapping
@@ -89,23 +92,27 @@ workflow vgMultiMap {
     
     # To make sure that we have a FASTA reference with a contig set that
     # exactly matches the graph, we generate it ourselves, from the graph.
-    call extractReference {
-        input:
-            in_xg_file=XG_FILE,
-            in_vg_container=VG_CONTAINER,
-            in_extract_disk=MAP_DISK,
-            in_extract_mem=MAP_MEM
+    if (!defined(REFERENCE_FILE)) {
+        call extractReference {
+            input:
+                in_xg_file=XG_FILE,
+                in_vg_container=VG_CONTAINER,
+                in_extract_disk=MAP_DISK,
+                in_extract_mem=MAP_MEM
+        }
     }
-    File reference_file = extractReference.reference_file
+    File reference_file = select_first([REFERENCE_FILE, extractReference.reference_file])
     
-    call indexReference {
-        input:
-            in_reference_file=reference_file,
-            in_index_disk=MAP_DISK,
-            in_index_mem=MAP_MEM
+    if (!defined(REFERENCE_INDEX_FILE)) {
+        call indexReference {
+            input:
+                in_reference_file=reference_file,
+                in_index_disk=MAP_DISK,
+                in_index_mem=MAP_MEM
+        }
     }
-    File reference_index_file = indexReference.reference_index_file
-    File reference_dict_file = indexReference.reference_dict_file
+    File reference_index_file = select_first([REFERENCE_INDEX_FILE, indexReference.reference_index_file])
+    File reference_dict_file = select_first([REFERENCE_DICT_FILE, indexReference.reference_dict_file])
 
     ################################################################
     # Distribute vg mapping opperation over each chunked read pair #
