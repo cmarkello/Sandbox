@@ -1,11 +1,11 @@
 version 1.0
 
-### giraffe_and_deepvariant.wdl ###
+### giraffe_and_deeptrio.mapper.wdl ###
 ## Author: Charles Markello
-## Description: Core VG Giraffe mapping and DeepVariant calling workflow for single sample datasets.
+## Description: Core VG Giraffe mapping workflow for single sample datasets.
 ## Reference: https://github.com/vgteam/vg/wiki
 
-workflow vgMultiMap {
+workflow vgGiraffeMap {
     input {
         File INPUT_READ_FILE_1                          # Input sample 1st read pair fastq.gz
         File INPUT_READ_FILE_2                          # Input sample 2nd read pair fastq.gz
@@ -14,7 +14,6 @@ workflow vgMultiMap {
         String VG_CONTAINER = "quay.io/vgteam/vg:v1.36.0"
         Int READS_PER_CHUNK = 20000000                  # Number of reads contained in each mapping chunk (20000000 for wgs)
         String? GIRAFFE_OPTIONS                         # (OPTIONAL) extra command line options for Giraffe mapper
-        Array[String]+? CONTIGS                         # (OPTIONAL) Desired reference genome contigs, which are all paths in the XG index.
         File? PATH_LIST_FILE                            # (OPTIONAL) Text file where each line is a path name in the XG index, to use instead of CONTIGS. If neither is given, paths are extracted from the XG and subset to chromosome-looking paths.
         String REFERENCE_PREFIX = ""                    # Remove this off the beginning of path names in surjected BAM (set to match prefix in PATH_LIST_FILE)
         File XG_FILE                                    # Path to .xg index file
@@ -22,26 +21,14 @@ workflow vgMultiMap {
         File GGBWT_FILE                                 # Path to .gg index file
         File DIST_FILE                                  # Path to .dist index file
         File MIN_FILE                                   # Path to .min index file
-        File? TRUTH_VCF                                 # Path to .vcf.gz to compare against
-        File? TRUTH_VCF_INDEX                           # Path to Tabix index for TRUTH_VCF
-        File? EVALUATION_REGIONS_BED                    # BED to restrict comparison against TRUTH_VCF to
-        File? DV_MODEL_META                             # .meta file for a custom DeepVariant calling model
-        File? DV_MODEL_INDEX                            # .index file for a custom DeepVariant calling model
-        File? DV_MODEL_DATA                             # .data-00000-of-00001 file for a custom DeepVariant calling model
         Boolean LEFTALIGN_BAM = false                   # Whether or not to left-align reads in the BAM before DV
         Boolean REALIGN_INDELS = false                  # Whether or not to realign reads near indels
         Int REALIGNMENT_EXPANSION_BASES = 160           # Number of bases to expand indel realignment targets by on either side, to free up read tails in slippery regions.
-        Int MIN_MAPQ = 1                                # Minimum MAPQ of reads to use for calling. 4 is the lowest at which a mapping is more likely to be right than wrong.
-        Boolean DV_KEEP_LEGACY_AC = true                # Should DV use the legacy allele counter behavior?
-        Boolean DV_NORM_READS = true                    # Should SV normalize reads?
         Int SPLIT_READ_CORES = 8
         Int SPLIT_READ_DISK = 10
         Int MAP_CORES = 16
         Int MAP_DISK = 10
         Int MAP_MEM = 50
-        Int CALL_CORES = 8
-        Int CALL_DISK = 40
-        Int CALL_MEM = 50
         File? REFERENCE_FILE
         File? REFERENCE_INDEX_FILE
         File? REFERENCE_DICT_FILE
@@ -270,95 +257,9 @@ workflow vgMultiMap {
         }
         File calling_bam = select_first([runAbraRealigner.indel_realigned_bam, leftShiftBAMFile.left_shifted_bam, deepvariant_caller_input_files.left])
         File calling_bam_index = select_first([runAbraRealigner.indel_realigned_bam_index, indexBAMFile.bam_index, deepvariant_caller_input_files.right])
-        ## DeepVariant calling
-        call runDeepVariantMakeExamples {
-            input:
-                in_sample_name=SAMPLE_NAME,
-                in_bam_file=calling_bam,
-                in_bam_file_index=calling_bam_index,
-                in_reference_file=reference_file,
-                in_reference_index_file=reference_index_file,
-                in_min_mapq=MIN_MAPQ,
-                in_keep_legacy_ac=DV_KEEP_LEGACY_AC,
-                in_norm_reads=DV_NORM_READS,
-                in_call_cores=CALL_CORES,
-                in_call_disk=CALL_DISK,
-                in_call_mem=CALL_MEM
-        }
-        call runDeepVariantCallVariants {
-            input:
-                in_sample_name=SAMPLE_NAME,
-                in_reference_file=reference_file,
-                in_reference_index_file=reference_index_file,
-                in_examples_file=runDeepVariantMakeExamples.examples_file,
-                in_nonvariant_site_tf_file=runDeepVariantMakeExamples.nonvariant_site_tf_file,
-                in_model_meta_file=DV_MODEL_META,
-                in_model_index_file=DV_MODEL_INDEX,
-                in_model_data_file=DV_MODEL_DATA,
-                in_call_cores=CALL_CORES,
-                in_call_disk=CALL_DISK,
-                in_call_mem=CALL_MEM
-        }
-    }
-    # Merge distributed variant called VCFs
-    call concatClippedVCFChunks {
-        input:
-            in_sample_name=SAMPLE_NAME,
-            in_clipped_vcf_chunk_files=runDeepVariantCallVariants.output_vcf_file,
-            in_call_disk=CALL_DISK,
-            in_call_mem=CALL_MEM
-    }
-    # Extract either the normal or structural variant based VCFs and compress them
-    call bgzipMergedVCF {
-        input:
-            in_sample_name=SAMPLE_NAME,
-            in_merged_vcf_file=concatClippedVCFChunks.output_merged_vcf,
-            in_vg_container=VG_CONTAINER,
-            in_call_disk=CALL_DISK,
-            in_call_mem=CALL_MEM
-    }
-    
-    if (defined(TRUTH_VCF) && defined(TRUTH_VCF_INDEX)) {
-    
-        # To evaluate the VCF we need a template of the reference
-        call buildReferenceTemplate {
-            input:
-                in_reference_file=reference_file
-        }
-        
-        # Direct vcfeval comparison makes an archive with FP and FN VCFs
-        call compareCalls {
-            input:
-                in_sample_vcf_file=bgzipMergedVCF.output_merged_vcf,
-                in_sample_vcf_index_file=bgzipMergedVCF.output_merged_vcf_index,
-                in_truth_vcf_file=select_first([TRUTH_VCF]),
-                in_truth_vcf_index_file=select_first([TRUTH_VCF_INDEX]),
-                in_template_archive=buildReferenceTemplate.output_template_archive,
-                in_evaluation_regions_file=EVALUATION_REGIONS_BED,
-                in_call_disk=CALL_DISK,
-                in_call_mem=CALL_MEM
-        }
-        
-        # Hap.py comparison makes accuracy results stratified by SNPs and indels
-        call compareCallsHappy {
-            input:
-                in_sample_vcf_file=bgzipMergedVCF.output_merged_vcf,
-                in_sample_vcf_index_file=bgzipMergedVCF.output_merged_vcf_index,
-                in_truth_vcf_file=select_first([TRUTH_VCF]),
-                in_truth_vcf_index_file=select_first([TRUTH_VCF_INDEX]),
-                in_reference_file=reference_file,
-                in_reference_index_file=reference_index_file,
-                in_evaluation_regions_file=EVALUATION_REGIONS_BED,
-                in_call_disk=CALL_DISK,
-                in_call_mem=CALL_MEM
-        }
     }
     
     output {
-        File? output_vcfeval_evaluation_archive = compareCalls.output_evaluation_archive
-        File? output_happy_evaluation_archive = compareCallsHappy.output_evaluation_archive
-        File output_vcf = bgzipMergedVCF.output_merged_vcf
-        File output_vcf_index = bgzipMergedVCF.output_merged_vcf_index
         Array[File] output_calling_bams = calling_bam
         Array[File] output_calling_bam_indexes = calling_bam_index
     }   

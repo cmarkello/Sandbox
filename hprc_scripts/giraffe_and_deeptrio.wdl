@@ -1,15 +1,23 @@
 version 1.0
 
-### giraffe_and_deepvariant.wdl ###
+### giraffe_and_deeptrio.wdl ###
 ## Author: Charles Markello
-## Description: Core VG Giraffe mapping and DeepVariant calling workflow for single sample datasets.
+## Description: Core VG Giraffe mapping and DeepTrio calling workflow for maternal-paternal-child sample datasets.
 ## Reference: https://github.com/vgteam/vg/wiki
 
-workflow vgMultiMap {
+import "./giraffe_and_deeptrio.mapper.wdl" as vgGiraffeMapWorkflow
+
+workflow vgGiraffeDeeptrio {
     input {
-        File INPUT_READ_FILE_1                          # Input sample 1st read pair fastq.gz
-        File INPUT_READ_FILE_2                          # Input sample 2nd read pair fastq.gz
-        String SAMPLE_NAME                              # The sample name
+        File CHILD_INPUT_READ_FILE_1                    # Input child sample 1st read pair fastq.gz
+        File CHILD_INPUT_READ_FILE_2                    # Input child sample 2nd read pair fastq.gz
+        File MATERNAL_INPUT_READ_FILE_1                 # Input maternal sample 1st read pair fastq.gz
+        File MATERNAL_INPUT_READ_FILE_2                 # Input maternal sample 2nd read pair fastq.gz
+        File PATERNAL_INPUT_READ_FILE_1                 # Input paternal sample 1st read pair fastq.gz
+        File PATERNAL_INPUT_READ_FILE_2                 # Input paternal sample 2nd read pair fastq.gz
+        String SAMPLE_NAME                              # The child sample name
+        String MATERNAL_NAME                            # The maternal sample name
+        String PATERNAL_NAME                            # The paternal sample name
         # VG Container used in the pipeline (e.g. quay.io/vgteam/vg:v1.16.0)
         String VG_CONTAINER = "quay.io/vgteam/vg:v1.36.0"
         Int READS_PER_CHUNK = 20000000                  # Number of reads contained in each mapping chunk (20000000 for wgs)
@@ -45,26 +53,6 @@ workflow vgMultiMap {
         File? REFERENCE_FILE
         File? REFERENCE_INDEX_FILE
         File? REFERENCE_DICT_FILE
-    }
-
-    # Split input reads into chunks for parallelized mapping
-    call splitReads as firstReadPair {
-        input:
-            in_read_file=INPUT_READ_FILE_1,
-            in_pair_id="1",
-            in_vg_container=VG_CONTAINER,
-            in_reads_per_chunk=READS_PER_CHUNK,
-            in_split_read_cores=SPLIT_READ_CORES,
-            in_split_read_disk=SPLIT_READ_DISK
-    }
-    call splitReads as secondReadPair {
-        input:
-            in_read_file=INPUT_READ_FILE_2,
-            in_pair_id="2",
-            in_vg_container=VG_CONTAINER,
-            in_reads_per_chunk=READS_PER_CHUNK,
-            in_split_read_cores=SPLIT_READ_CORES,
-            in_split_read_disk=SPLIT_READ_DISK
     }
 
     # Which path names to work on?
@@ -117,96 +105,95 @@ workflow vgMultiMap {
     File reference_index_file = select_first([REFERENCE_INDEX_FILE, indexReference.reference_index_file])
     File reference_dict_file = select_first([REFERENCE_DICT_FILE, indexReference.reference_dict_file])
 
+    #######################################################
+    ############ Run mapping workflows on Trio ############
+    #######################################################
+    call vgGiraffeMapWorkflow.vgGiraffeMap as maternalMapWorkflow {
+        input:
+            INPUT_READ_FILE_1=MATERNAL_INPUT_READ_FILE_1,
+            INPUT_READ_FILE_2=MATERNAL_INPUT_READ_FILE_2,
+            SAMPLE_NAME=MATERNAL_NAME,
+            VG_CONTAINER=VG_CONTAINER,
+            READS_PER_CHUNK=READS_PER_CHUNK,
+            GIRAFFE_OPTIONS=GIRAFFE_OPTIONS,
+            PATH_LIST_FILE=pipeline_path_list_file,
+            REFERENCE_PREFIX=REFERENCE_PREFIX,
+            XG_FILE=XG_FILE,
+            GBWT_FILE=GBWT_FILE,
+            GGBWT_FILE=GGBWT_FILE,
+            DIST_FILE=DIST_FILE,
+            MIN_FILE=MIN_FILE,
+            LEFTALIGN_BAM=LEFTALIGN_BAM,
+            REALIGN_INDELS=REALIGN_INDELS,
+            REALIGNMENT_EXPANSION_BASES=REALIGNMENT_EXPANSION_BASES,
+            REFERENCE_FILE=reference_file,
+            REFERENCE_INDEX_FILE=reference_index_file,
+            REFERENCE_DICT_FILE=reference_dict_file,
+            SPLIT_READ_CORES=SPLIT_READ_CORES,
+            SPLIT_READ_DISK=SPLIT_READ_DISK,
+            MAP_CORES=MAP_CORES,
+            MAP_DISK=MAP_DISK,
+            MAP_MEM=MAP_MEM
+    }
+    call vgGiraffeMapWorkflow.vgGiraffeMap as paternalMapWorkflow {
+        input:
+            INPUT_READ_FILE_1=PATERNAL_INPUT_READ_FILE_1,
+            INPUT_READ_FILE_2=PATERNAL_INPUT_READ_FILE_2,
+            SAMPLE_NAME=PATERNAL_NAME,
+            VG_CONTAINER=VG_CONTAINER,
+            READS_PER_CHUNK=READS_PER_CHUNK,
+            GIRAFFE_OPTIONS=GIRAFFE_OPTIONS,
+            PATH_LIST_FILE=pipeline_path_list_file,
+            REFERENCE_PREFIX=REFERENCE_PREFIX,
+            XG_FILE=XG_FILE,
+            GBWT_FILE=GBWT_FILE,
+            GGBWT_FILE=GGBWT_FILE,
+            DIST_FILE=DIST_FILE,
+            MIN_FILE=MIN_FILE,
+            LEFTALIGN_BAM=LEFTALIGN_BAM,
+            REALIGN_INDELS=REALIGN_INDELS,
+            REALIGNMENT_EXPANSION_BASES=REALIGNMENT_EXPANSION_BASES,
+            REFERENCE_FILE=reference_file,
+            REFERENCE_INDEX_FILE=reference_index_file,
+            REFERENCE_DICT_FILE=reference_dict_file,
+            SPLIT_READ_CORES=SPLIT_READ_CORES,
+            SPLIT_READ_DISK=SPLIT_READ_DISK,
+            MAP_CORES=MAP_CORES,
+            MAP_DISK=MAP_DISK,
+            MAP_MEM=MAP_MEM
+    }
+    call vgGiraffeMapWorkflow.vgGiraffeMap as probandMapWorkflow {
+        input:
+            INPUT_READ_FILE_1=CHILD_INPUT_READ_FILE_1,
+            INPUT_READ_FILE_2=CHILD_INPUT_READ_FILE_2,
+            SAMPLE_NAME=SAMPLE_NAME,
+            VG_CONTAINER=VG_CONTAINER,
+            READS_PER_CHUNK=READS_PER_CHUNK,
+            GIRAFFE_OPTIONS=GIRAFFE_OPTIONS,
+            PATH_LIST_FILE=pipeline_path_list_file,
+            REFERENCE_PREFIX=REFERENCE_PREFIX,
+            XG_FILE=XG_FILE,
+            GBWT_FILE=GBWT_FILE,
+            GGBWT_FILE=GGBWT_FILE,
+            DIST_FILE=DIST_FILE,
+            MIN_FILE=MIN_FILE,
+            LEFTALIGN_BAM=LEFTALIGN_BAM,
+            REALIGN_INDELS=REALIGN_INDELS,
+            REALIGNMENT_EXPANSION_BASES=REALIGNMENT_EXPANSION_BASES,
+            REFERENCE_FILE=reference_file,
+            REFERENCE_INDEX_FILE=reference_index_file,
+            REFERENCE_DICT_FILE=reference_dict_file,
+            SPLIT_READ_CORES=SPLIT_READ_CORES,
+            SPLIT_READ_DISK=SPLIT_READ_DISK,
+            MAP_CORES=MAP_CORES,
+            MAP_DISK=MAP_DISK,
+            MAP_MEM=MAP_MEM
+    }
+
+
     ################################################################
     # Distribute vg mapping operation over each chunked read pair #
     ################################################################
-    Array[Pair[File,File]] read_pair_chunk_files_list = zip(firstReadPair.output_read_chunks, secondReadPair.output_read_chunks)
-    scatter (read_pair_chunk_files in read_pair_chunk_files_list) {
-        call runVGGIRAFFE {
-            input:
-                in_left_read_pair_chunk_file=read_pair_chunk_files.left,
-                in_right_read_pair_chunk_file=read_pair_chunk_files.right,
-                in_vg_container=VG_CONTAINER,
-                in_giraffe_options=GIRAFFE_OPTIONS,
-                in_xg_file=XG_FILE,
-                in_gbwt_file=GBWT_FILE,
-                in_ggbwt_file=GGBWT_FILE,
-                in_dist_file=DIST_FILE,
-                in_min_file=MIN_FILE,
-                # We always need to pass a full dict file here, with lengths,
-                # because if we pass just path lists and the paths are not
-                # completely contained in the graph (like if we're working on
-                # GRCh38 paths in a CHM13-based graph), giraffe won't be able
-                # to get the path lengths and will crash.
-                # TODO: Somehow this problem is supposed to go away if we pull
-                # any GRCh38. prefix off the path names by setting
-                # REFERENCE_PREFIX and making sure the prefix isn't in the
-                # truth set.
-                # See <https://github.com/adamnovak/giraffe-dv-wdl/pull/2#issuecomment-955096920>
-                in_ref_dict=reference_dict_file,
-                in_sample_name=SAMPLE_NAME,
-                in_map_cores=MAP_CORES,
-                in_map_disk=MAP_DISK,
-                in_map_mem=MAP_MEM
-        }
-        if (REFERENCE_PREFIX != "") {
-            # use samtools to replace the header contigs with those from our dict.
-            # this allows the header to contain contigs that are not in the graph,
-            # which is more general and lets CHM13-based graphs be used to call on GRCh38
-            # also, strip out contig prefixes in the BAM body
-            call fixBAMContigNaming {
-                input:
-                    in_bam_file=runVGGIRAFFE.chunk_bam_file,
-                    in_ref_dict=reference_dict_file,
-                    in_prefix_to_strip=REFERENCE_PREFIX,
-                    in_map_cores=MAP_CORES,
-                    in_map_disk=MAP_DISK,
-                    in_map_mem=MAP_MEM,
-            }
-        }
-        File properly_named_bam_file = select_first([fixBAMContigNaming.fixed_bam_file, runVGGIRAFFE.chunk_bam_file]) 
-        call sortBAMFile {
-            input:
-                in_sample_name=SAMPLE_NAME,
-                in_bam_chunk_file=properly_named_bam_file,
-                in_map_cores=MAP_CORES,
-                in_map_disk=MAP_DISK,
-                in_map_mem=MAP_MEM,
-        }
-    }
-    Array[File] alignment_chunk_bam_files = select_all(sortBAMFile.sorted_chunk_bam)
-
-    call mergeAlignmentBAMChunks {
-        input:
-            in_sample_name=SAMPLE_NAME,
-            in_alignment_bam_chunk_files=alignment_chunk_bam_files,
-            in_map_cores=MAP_CORES,
-            in_map_disk=MAP_DISK,
-            in_map_mem=MAP_MEM
-    }
-    
-    if (REFERENCE_PREFIX != "") {
-        # strip all the GRCh38's off our path list file.  we need them for surject as they are in the path
-        # but fixBAMContigNaming above stripped them, so we don't need them downstream
-        call fixPathNames {
-            input:
-                in_path_file=pipeline_path_list_file,
-                in_prefix_to_strip=REFERENCE_PREFIX,
-        }
-    }
-    File properly_named_path_list_file = select_first([fixPathNames.fixed_path_list_file, pipeline_path_list_file])
-             
-    # Split merged alignment by contigs list
-    call splitBAMbyPath { 
-        input:
-            in_sample_name=SAMPLE_NAME,
-            in_merged_bam_file=mergeAlignmentBAMChunks.merged_bam_file,
-            in_merged_bam_file_index=mergeAlignmentBAMChunks.merged_bam_file_index,
-            in_path_list_file=properly_named_path_list_file,
-            in_map_cores=MAP_CORES,
-            in_map_disk=MAP_DISK,
-            in_map_mem=MAP_MEM
-    }
 
     ##
     ## Call variants with DeepVariant in each contig
