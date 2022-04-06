@@ -162,7 +162,7 @@ workflow vgGiraffeDeeptrio {
             MAP_DISK=MAP_DISK,
             MAP_MEM=MAP_MEM
     }
-    call vgGiraffeMapWorkflow.vgGiraffeMap as probandMapWorkflow {
+    call vgGiraffeMapWorkflow.vgGiraffeMap as childMapWorkflow {
         input:
             INPUT_READ_FILE_1=CHILD_INPUT_READ_FILE_1,
             INPUT_READ_FILE_2=CHILD_INPUT_READ_FILE_2,
@@ -191,73 +191,211 @@ workflow vgGiraffeDeeptrio {
     }
 
 
-    ################################################################
-    # Distribute vg mapping operation over each chunked read pair #
-    ################################################################
+    ##################################################
+    # Distribute deeptrio operation over each contig #
+    ##################################################
 
     ##
-    ## Call variants with DeepVariant in each contig
+    ## Call variants with DeepTrio in each contig
     ##
-    scatter (deepvariant_caller_input_files in zip(splitBAMbyPath.bam_contig_files, splitBAMbyPath.bam_contig_files_index)) {
-        ## Evantually shift and realign reads
-        if (LEFTALIGN_BAM){
-            # Just left-shift each read individually
-            call leftShiftBAMFile {
-                input:
-                in_sample_name=SAMPLE_NAME,
-                in_bam_file=deepvariant_caller_input_files.left,
-                in_reference_file=reference_file,
-                in_reference_index_file=reference_index_file,
-                in_call_disk=CALL_DISK
-            }
-            # This tool can't make an index itself so we need to re-index the BAM
-            call indexBAMFile {
-                input:
-                in_sample_name=SAMPLE_NAME,
-                in_bam_file=leftShiftBAMFile.left_shifted_bam,
-                in_map_disk=MAP_DISK,
-                in_map_mem=MAP_MEM
-            }
-        }
-        if (REALIGN_INDELS) {
-            File forrealign_bam = select_first([leftShiftBAMFile.left_shifted_bam, deepvariant_caller_input_files.left])
-            File forrealign_index = select_first([indexBAMFile.bam_index, deepvariant_caller_input_files.right])
-            # Do indel realignment
-            call runGATKRealignerTargetCreator {
+    
+    # Run distributed DeepTrio linear variant calling for each chromosomal contig
+    Array[Pair[File, File]] maternal_bams_and_indexes_by_contig = zip(maternalMapWorkflow.output_calling_bams, maternalMapWorkflow.output_calling_bam_indexes)
+    Array[Pair[File, File]] paternal_bams_and_indexes_by_contig = zip(paternalMapWorkflow.output_calling_bams, paternalMapWorkflow.output_calling_bam_indexes)
+    Array[Pair[File, File]] child_bams_and_indexes_by_contig = zip(childMapWorkflow.output_calling_bams, childMapWorkflow.output_calling_bam_indexes)
+    Array[Pair[Pair[File,File],Pair[Pair[File,File],Pair[File,File]]]] trio_bam_index_by_contigs_pair = zip(child_bams_and_indexes_by_contig, zip(maternal_bams_and_indexes_by_contig, paternal_bams_and_indexes_by_contig))
+    #              trio_bam_index_by_contigs_pair
+    #           _________________|_________________
+    #       ___/__                     ____________\_____________
+    #      /      \             _____ /____                ______\____
+    # child.bam child.bai      /            \             /           \       
+    #                     maternal.bam maternal.bai paternal.bam paternal.bai        
+
+    scatter (deeptrio_caller_input_files in trio_bam_index_by_contigs_pair) {
+        File child_bam_file = deeptrio_caller_input_files.left.left
+        File child_bam_file_index = deeptrio_caller_input_files.left.right
+        File maternal_bam_file = deeptrio_caller_input_files.right.left.left
+        File maternal_bam_file_index = deeptrio_caller_input_files.right.left.right
+        File paternal_bam_file = deeptrio_caller_input_files.right.right.left
+        File paternal_bam_file_index = deeptrio_caller_input_files.right.right.right
+
+        ## DeepTrio calling
+        String contig_name = sub(sub(sub(child_bam_basename, "\\.indel_realigned.bam", ""), SAMPLE_NAME_CHILD, ""), "\\.", "")
+        if ((contig_name == "chrX")||(contig_name == "X")||(contig_name == "chrY")||(contig_name == "Y")||(contig_name == "chrM")||(contig_name == "MT")) {
+            call runDeepVariant as callDeepVariantChild {
                 input:
                     in_sample_name=SAMPLE_NAME,
-                    in_bam_file=forrealign_bam,
-                    in_bam_index_file=forrealign_index,
-                    in_reference_file=reference_file,
-                    in_reference_index_file=reference_index_file,
-                    in_reference_dict_file=reference_dict_file,
-                    in_call_disk=CALL_DISK
+                    in_bam_file=child_indel_realigned_bam,
+                    in_bam_file_index=child_indel_realigned_bam_index,
+                    in_reference_file=REF_FILE,
+                    in_reference_index_file=REF_INDEX_FILE,
+                    in_model=DEEPVAR_MODEL,
+                    in_small_resources=SMALL_RESOURCES
             }
-            if (REALIGNMENT_EXPANSION_BASES != 0) {
-                # We want the realignment targets to be wider
-                call widenRealignmentTargets {
+            if (!defined(MATERNAL_BAM_INDEX_CONTIG_LIST)) {
+                call runDeepVariant as callDeepVariantMaternal {
                     input:
-                        in_target_bed_file=runGATKRealignerTargetCreator.realigner_target_bed,
-                        in_reference_index_file=reference_index_file,
-                        in_expansion_bases=REALIGNMENT_EXPANSION_BASES,
-                        in_call_disk=CALL_DISK
+                        in_sample_name=MATERNAL_NAME,
+                        in_bam_file=maternal_indel_realigned_bam,
+                        in_bam_file_index=maternal_indel_realigned_bam_index,
+                        in_reference_file=REF_FILE,
+                        in_reference_index_file=REF_INDEX_FILE,
+                        in_model=DEEPVAR_MODEL,
+                        in_small_resources=SMALL_RESOURCES
                 }
             }
-            File target_bed_file = select_first([widenRealignmentTargets.output_target_bed_file, runGATKRealignerTargetCreator.realigner_target_bed])
-            call runAbraRealigner {
-                input:
-                    in_sample_name=SAMPLE_NAME,
-                    in_bam_file=forrealign_bam,
-                    in_bam_index_file=forrealign_index,
-                    in_target_bed_file=target_bed_file,
-                    in_reference_file=reference_file,
-                    in_reference_index_file=reference_index_file,
-                    in_call_disk=CALL_DISK
+            if (!defined(PATERNAL_BAM_INDEX_CONTIG_LIST)) {
+                call runDeepVariant as callDeepVariantPaternal {
+                    input:
+                        in_sample_name=PATERNAL_NAME,
+                        in_bam_file=paternal_indel_realigned_bam,
+                        in_bam_file_index=paternal_indel_realigned_bam_index,
+                        in_reference_file=REF_FILE,
+                        in_reference_index_file=REF_INDEX_FILE,
+                        in_model=DEEPVAR_MODEL,
+                        in_small_resources=SMALL_RESOURCES
+                }
             }
         }
-        File calling_bam = select_first([runAbraRealigner.indel_realigned_bam, leftShiftBAMFile.left_shifted_bam, deepvariant_caller_input_files.left])
-        File calling_bam_index = select_first([runAbraRealigner.indel_realigned_bam_index, indexBAMFile.bam_index, deepvariant_caller_input_files.right])
-        ## DeepVariant calling
+        if (!((contig_name == "chrX")||(contig_name == "X")||(contig_name == "chrY")||(contig_name == "Y")||(contig_name == "chrM")||(contig_name == "MT"))) {
+            call runDeepTrioMakeExamples {
+                input:
+                    in_child_name=SAMPLE_NAME,
+                    in_maternal_name=SAMPLE_NAME_MATERNAL,
+                    in_paternal_name=SAMPLE_NAME_PATERNAL,
+                    in_child_bam_file=child_indel_realigned_bam,
+                    in_child_bam_file_index=child_indel_realigned_bam_index,
+                    in_maternal_bam_file=maternal_indel_realigned_bam,
+                    in_maternal_bam_file_index=maternal_indel_realigned_bam_index,
+                    in_paternal_bam_file=paternal_indel_realigned_bam,
+                    in_paternal_bam_file_index=paternal_indel_realigned_bam_index,
+                    in_reference_file=REF_FILE,
+                in_sample_name=SAMPLE_NAME,
+                in_bam_file=calling_bam,
+                in_bam_file_index=calling_bam_index,
+                in_reference_file=reference_file,
+                in_reference_index_file=reference_index_file,
+                in_min_mapq=MIN_MAPQ,
+                in_keep_legacy_ac=DV_KEEP_LEGACY_AC,
+                in_norm_reads=DV_NORM_READS,
+                in_call_cores=CALL_CORES,
+                in_call_disk=CALL_DISK,
+                in_call_mem=CALL_MEM
+                    in_reference_index_file=REF_INDEX_FILE,
+                    in_small_resources=SMALL_RESOURCES
+            }
+            call runDeepTrioCallVariants as callVariantsChild {
+                input:
+                    in_sample_name=SAMPLE_NAME_CHILD,
+                    in_sample_type="child",
+                    in_reference_file=REF_FILE,
+                    in_reference_index_file=REF_INDEX_FILE,
+                    in_examples_file=runDeepTrioMakeExamples.child_examples_file,
+                    in_nonvariant_site_tf_file=runDeepTrioMakeExamples.child_nonvariant_site_tf_file,
+                    in_model=DEEPTRIO_CHILD_MODEL,
+                    in_small_resources=SMALL_RESOURCES
+            }
+            if (!defined(MATERNAL_BAM_INDEX_CONTIG_LIST)) {
+                call runDeepTrioCallVariants as callVariantsMaternal {
+                    input:
+                        in_sample_name=SAMPLE_NAME_MATERNAL,
+                        in_sample_type="parent2",
+                        in_reference_file=REF_FILE,
+                        in_reference_index_file=REF_INDEX_FILE,
+                        in_examples_file=runDeepTrioMakeExamples.maternal_examples_file,
+                        in_nonvariant_site_tf_file=runDeepTrioMakeExamples.maternal_nonvariant_site_tf_file,
+                        in_model=DEEPTRIO_PARENT_MODEL,
+                        in_small_resources=SMALL_RESOURCES
+                }
+            }
+            if (!defined(PATERNAL_BAM_INDEX_CONTIG_LIST)) {
+                call runDeepTrioCallVariants as callVariantsPaternal {
+                    input:
+                        in_sample_name=SAMPLE_NAME_PATERNAL,
+                        in_sample_type="parent1",
+                        in_reference_file=REF_FILE,
+                        in_reference_index_file=REF_INDEX_FILE,
+                        in_examples_file=runDeepTrioMakeExamples.paternal_examples_file,
+                        in_nonvariant_site_tf_file=runDeepTrioMakeExamples.paternal_nonvariant_site_tf_file,
+                        in_model=DEEPTRIO_PARENT_MODEL,
+                        in_small_resources=SMALL_RESOURCES
+                }
+            }
+        }
+    }
+    Array[File] childDeepVarGVCF = select_all(callDeepVariantChild.output_gvcf_file)
+    Array[File] childDeepTrioGVCF = select_all(callVariantsChild.output_gvcf_file)
+    Array[File] child_contig_gvcf_output_list = select_all(flatten([childDeepTrioGVCF, childDeepVarGVCF]))
+    # Merge distributed variant called VCFs
+    call concatClippedVCFChunks as concatVCFChunksChild {
+        input:
+            in_sample_name=SAMPLE_NAME_CHILD,
+            in_clipped_vcf_chunk_files=child_contig_gvcf_output_list,
+            in_small_resources=SMALL_RESOURCES
+    }
+    # Extract either the normal or structural variant based VCFs and compress them
+    call bgzipMergedVCF as bgzipVGCalledChildVCF {
+        input:
+            in_sample_name=SAMPLE_NAME_CHILD,
+            in_merged_vcf_file=concatVCFChunksChild.output_merged_vcf,
+            in_vg_container=VG_CONTAINER,
+            in_small_resources=SMALL_RESOURCES
+    }
+    Array[File] maDeepVarGVCF = select_all(callDeepVariantMaternal.output_gvcf_file)
+    Array[File] maDeepTrioGVCF = select_all(callVariantsMaternal.output_gvcf_file)
+    Array[File] maternal_contig_gvcf_output_list = select_all(flatten([maDeepTrioGVCF, maDeepVarGVCF]))
+    # Merge distributed variant called VCFs
+    call concatClippedVCFChunks as concatVCFChunksMaternal {
+        input:
+            in_sample_name=SAMPLE_NAME_MATERNAL,
+            in_clipped_vcf_chunk_files=maternal_contig_gvcf_output_list,
+            in_small_resources=SMALL_RESOURCES
+    }
+    # Extract either the normal or structural variant based VCFs and compress them
+    call bgzipMergedVCF as bgzipVGCalledMaternalVCF {
+        input:
+            in_sample_name=SAMPLE_NAME_MATERNAL,
+            in_merged_vcf_file=concatVCFChunksMaternal.output_merged_vcf,
+            in_vg_container=VG_CONTAINER,
+            in_small_resources=SMALL_RESOURCES
+    }
+    Array[File] paDeepVarGVCF = select_all(callDeepVariantPaternal.output_gvcf_file)
+    Array[File] paDeepTrioGVCF = select_all(callVariantsPaternal.output_gvcf_file)
+    Array[File] paternal_contig_gvcf_output_list = select_all(flatten([paDeepTrioGVCF, paDeepVarGVCF]))
+    # Merge distributed variant called VCFs
+    call concatClippedVCFChunks as concatVCFChunksPaternal {
+        input:
+            in_sample_name=SAMPLE_NAME_PATERNAL,
+            in_clipped_vcf_chunk_files=paternal_contig_gvcf_output_list,
+            in_small_resources=SMALL_RESOURCES
+    }
+    # Extract either the normal or structural variant based VCFs and compress them
+    call bgzipMergedVCF as bgzipVGCalledPaternalVCF {
+        input:
+            in_sample_name=SAMPLE_NAME_PATERNAL,
+            in_merged_vcf_file=concatVCFChunksPaternal.output_merged_vcf,
+            in_vg_container=VG_CONTAINER,
+            in_small_resources=SMALL_RESOURCES
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         call runDeepVariantMakeExamples {
             input:
                 in_sample_name=SAMPLE_NAME,
