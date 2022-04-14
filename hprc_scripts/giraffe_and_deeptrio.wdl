@@ -36,6 +36,12 @@ workflow vgGiraffeDeeptrio {
         File? DV_MODEL_META                             # .meta file for a custom DeepVariant calling model
         File? DV_MODEL_INDEX                            # .index file for a custom DeepVariant calling model
         File? DV_MODEL_DATA                             # .data-00000-of-00001 file for a custom DeepVariant calling model
+        File? CHILD_DT_MODEL_META                       # .meta file for a custom DeepVariant calling model
+        File? CHILD_DT_MODEL_INDEX                      # .index file for a custom DeepVariant calling model
+        File? CHILD_DT_MODEL_DATA                       # .data-00000-of-00001 file for a custom DeepVariant calling model
+        File? PARENT_DT_MODEL_META                      # .meta file for a custom DeepVariant calling model
+        File? PARENT_DT_MODEL_INDEX                     # .index file for a custom DeepVariant calling model
+        File? PARENT_DT_MODEL_DATA                      # .data-00000-of-00001 file for a custom DeepVariant calling model
         Boolean LEFTALIGN_BAM = false                   # Whether or not to left-align reads in the BAM before DV
         Boolean REALIGN_INDELS = false                  # Whether or not to realign reads near indels
         Int REALIGNMENT_EXPANSION_BASES = 160           # Number of bases to expand indel realignment targets by on either side, to free up read tails in slippery regions.
@@ -1514,6 +1520,16 @@ task runDeepTrioMakeExamples {
         ln -f -s ~{in_reference_index_file} ref.fna.fai
         CONTIG_ID=($(ls ~{in_child_bam_file} | rev | cut -f1 -d'/' | rev | sed s/^~{in_child_name}.//g | sed s/.indel_realigned.bam$//g))
         
+        NORM_READS_ARG=""
+        if [ ~{in_norm_reads} == true ]; then
+          NORM_READS_ARG="--normalize_reads"
+        fi
+
+        KEEP_LEGACY_AC_ARG=""
+        if [ ~{in_keep_legacy_ac} == true ]; then
+          KEEP_LEGACY_AC_ARG="--keep_legacy_allele_counter_behavior"
+        fi
+
         seq 0 $((~{in_call_cores}-1)) | \
         parallel -q --halt 2 --line-buffer /opt/deepvariant/bin/deeptrio/make_examples \
         --mode calling \
@@ -1526,9 +1542,10 @@ task runDeepTrioMakeExamples {
         --sample_name_parent1 ~{in_paternal_name} \
         --sample_name_parent2 ~{in_maternal_name} \
         --gvcf ./gvcf.tfrecord@~{in_call_cores}.gz \
-        --min_mapping_quality 1 \
         --pileup_image_height_child 60 \
         --pileup_image_height_parent 40 \
+        --min_mapping_quality ~{in_min_mapq} \
+        ${KEEP_LEGACY_AC_ARG} ${NORM_READS_ARG} \
         --regions ${CONTIG_ID} \
         --task {} 
         ls | grep 'make_examples_child.tfrecord-' | tar -czf 'make_examples_child.tfrecord.tar.gz' -T -
@@ -1572,12 +1589,6 @@ task runDeepTrioCallVariants {
         Int in_call_mem
     }
 
-    Int in_vgcall_cores = if in_small_resources then 8 else 8
-    Int in_vgcall_disk = if in_small_resources then 15 else 40
-    String in_vgcall_mem = if in_small_resources then "15" else "64"
-
-    Boolean custom_model = defined(in_model)
-
     command <<<
         # Set the exit code of a pipeline to that of the rightmost command
         # to exit with a non-zero status, or zero if all commands of the pipeline exit
@@ -1591,39 +1602,43 @@ task runDeepTrioCallVariants {
         #to turn off echo do 'set +o xtrace'
         tar -xzf ~{in_examples_file}
         tar -xzf ~{in_nonvariant_site_tf_file}
-        gzip -dc ~{in_reference_file} > ref.fna
-        ln -f -s ~{in_reference_index_file} ref.fna.fai
+        gzip -dc ~{in_reference_file} > reference.fa
+        ln -f -s ~{in_reference_index_file} reference.fa.fai
+        # We should use an array here, but that doesn't seem to work the way I
+        # usually do them (because of a set -u maybe?)
+        if [[ ! -z "~{in_model_meta_file}" ]] ; then
+            # Model files must be adjacent and not at arbitrary paths
+            ln -f -s "~{in_model_meta_file}" model.meta
+            ln -f -s "~{in_model_index_file}" model.index
+            ln -f -s "~{in_model_data_file}" model.data-00000-of-00001
+        elif [ ~{in_sample_type} == "child" ]; then
+            # use default child WGS models
+            ln -f -s "/opt/models/deeptrio/wgs/child/model.ckpt.meta" model.meta
+            ln -f -s "/opt/models/deeptrio/wgs/child/model.ckpt.index" model.index
+            ln -f -s "/opt/models/deeptrio/wgs/child/model.ckpt.data-00000-of-00001" model.data-00000-of-00001
+        else
+            # use default parent WGS models
+            ln -f -s "/opt/models/deeptrio/wgs/parent/model.ckpt.meta" model.meta
+            ln -f -s "/opt/models/deeptrio/wgs/parent/model.ckpt.index" model.index
+            ln -f -s "/opt/models/deeptrio/wgs/parent/model.ckpt.data-00000-of-00001" model.data-00000-of-00001
+        fi
+        
+        # Define expected examples and nonvariant site tensor flow files 
         if [ ~{in_sample_type} == "child" ]; then
             EXAMPLES_FILE="make_examples_child.tfrecord@~{in_vgcall_cores}.gz"
-            OUTPUT_FILE="call_variants_output_child.tfrecord.gz"
             NONVARIANT_SITE_FILE="gvcf_child.tfrecord@~{in_vgcall_cores}.gz"
-            DEEPTRIO_MODEL="/opt/models/deeptrio/wgs/child/model.ckpt"
-        elif [ ~{in_sample_type} == "parent1" ]; then
-            EXAMPLES_FILE="make_examples_parent1.tfrecord@~{in_vgcall_cores}.gz"
-            OUTPUT_FILE="call_variants_output_parent1.tfrecord.gz"
-            NONVARIANT_SITE_FILE="gvcf_parent1.tfrecord@~{in_vgcall_cores}.gz"
-            DEEPTRIO_MODEL="/opt/models/deeptrio/wgs/parent/model.ckpt"
-        elif [ ~{in_sample_type} == "parent2" ]; then
-            EXAMPLES_FILE="make_examples_parent2.tfrecord@~{in_vgcall_cores}.gz"
-            OUTPUT_FILE="call_variants_output_parent2.tfrecord.gz"
-            NONVARIANT_SITE_FILE="gvcf_parent2.tfrecord@~{in_vgcall_cores}.gz"
-            DEEPTRIO_MODEL="/opt/models/deeptrio/wgs/parent/model.ckpt"
+        else
+            EXAMPLES_FILE="make_examples_~{in_sample_type}.tfrecord@~{in_vgcall_cores}.gz"
+            NONVARIANT_SITE_FILE="gvcf_~{in_sample_type}.tfrecord@~{in_vgcall_cores}.gz"
         fi
-        if [ ~{custom_model} == true ]; then
-            tar -xzf ~{in_model}
-            model_basename=$(basename ~{in_model})
-            stripped_basename=${model_basename%%.*}
-            core_filename=$(ls $stripped_basename | head -n 1)
-            common_filename=${core_filename%.*}
-            DEEPTRIO_MODEL="${PWD}/${stripped_basename}/${common_filename}"
-        fi
+        
         /opt/deepvariant/bin/call_variants \
-        --outfile ${OUTPUT_FILE} \
+        --outfile call_variants_output.tfrecord.gz \
         --examples ${EXAMPLES_FILE} \
-        --checkpoint ${DEEPTRIO_MODEL} && \
+        --checkpoint model && \
         /opt/deepvariant/bin/postprocess_variants \
-        --ref ref.fna \
-        --infile ${OUTPUT_FILE} \
+        --ref reference.fa \
+        --infile call_variants_output.tfrecord.gz \
         --nonvariant_site_tfrecord_path ${NONVARIANT_SITE_FILE} \
         --outfile "~{in_sample_name}_deeptrio.vcf.gz" \
         --gvcf_outfile "~{in_sample_name}_deeptrio.g.vcf.gz"
@@ -1644,4 +1659,7 @@ task runDeepTrioCallVariants {
         docker: "google/deepvariant:deeptrio-1.3.0-gpu"
     }
 }
+
+
+
 
