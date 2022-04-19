@@ -47,7 +47,7 @@ workflow vgGiraffeDeeptrio {
         Int REALIGNMENT_EXPANSION_BASES = 160           # Number of bases to expand indel realignment targets by on either side, to free up read tails in slippery regions.
         Int MIN_MAPQ = 1                                # Minimum MAPQ of reads to use for calling. 4 is the lowest at which a mapping is more likely to be right than wrong.
         Boolean DV_KEEP_LEGACY_AC = true                # Should DV use the legacy allele counter behavior?
-        Boolean DV_NORM_READS = true                    # Should SV normalize reads?
+        Boolean DV_NORM_READS = true                    # Should DV normalize reads?
         Int SPLIT_READ_CORES = 8
         Int SPLIT_READ_DISK = 10
         Int MAP_CORES = 16
@@ -139,7 +139,10 @@ workflow vgGiraffeDeeptrio {
             SPLIT_READ_DISK=SPLIT_READ_DISK,
             MAP_CORES=MAP_CORES,
             MAP_DISK=MAP_DISK,
-            MAP_MEM=MAP_MEM
+            MAP_MEM=MAP_MEM,
+            CALL_CORES=CALL_CORES,
+            CALL_DISK=CALL_DISK,
+            CALL_MEM=CALL_MEM
     }
     call vgGiraffeMapWorkflow.vgGiraffeMap as paternalMapWorkflow {
         input:
@@ -166,7 +169,10 @@ workflow vgGiraffeDeeptrio {
             SPLIT_READ_DISK=SPLIT_READ_DISK,
             MAP_CORES=MAP_CORES,
             MAP_DISK=MAP_DISK,
-            MAP_MEM=MAP_MEM
+            MAP_MEM=MAP_MEM,
+            CALL_CORES=CALL_CORES,
+            CALL_DISK=CALL_DISK,
+            CALL_MEM=CALL_MEM
     }
     call vgGiraffeMapWorkflow.vgGiraffeMap as childMapWorkflow {
         input:
@@ -193,7 +199,10 @@ workflow vgGiraffeDeeptrio {
             SPLIT_READ_DISK=SPLIT_READ_DISK,
             MAP_CORES=MAP_CORES,
             MAP_DISK=MAP_DISK,
-            MAP_MEM=MAP_MEM
+            MAP_MEM=MAP_MEM,
+            CALL_CORES=CALL_CORES,
+            CALL_DISK=CALL_DISK,
+            CALL_MEM=CALL_MEM
     }
 
 
@@ -226,43 +235,13 @@ workflow vgGiraffeDeeptrio {
         File paternal_bam_file_index = deeptrio_caller_input_files.right.right.right
 
         ## DeepTrio calling
-        String contig_name = sub(sub(sub(basename(child_indel_realigned_bam), "\\.indel_realigned.bam", ""), SAMPLE_NAME, ""), "\\.", "")
+        String contig_name = sub(sub(sub(basename(child_bam_file), "\\.indel_realigned.bam", ""), SAMPLE_NAME, ""), "\\.", "")
         if ((contig_name == "chrX")||(contig_name == "X")||(contig_name == "chrY")||(contig_name == "Y")||(contig_name == "chrM")||(contig_name == "MT")) {
-            call runDeepVariant as callDeepVariantChild {
-                input:
-                    in_sample_name=SAMPLE_NAME,
-                    in_bam_file=child_indel_realigned_bam,
-                    in_bam_file_index=child_indel_realigned_bam_index,
-                    in_reference_file=reference_file,
-                    in_reference_index_file=REF_INDEX_FILE,
-                    in_model=DEEPVAR_MODEL,
-                    in_small_resources=SMALL_RESOURCES
-            }
-            call runDeepVariant as callDeepVariantMaternal {
-                input:
-                    in_sample_name=MATERNAL_NAME,
-                    in_bam_file=maternal_indel_realigned_bam,
-                    in_bam_file_index=maternal_indel_realigned_bam_index,
-                    in_reference_file=reference_file,
-                    in_reference_index_file=REF_INDEX_FILE,
-                    in_model=DEEPVAR_MODEL,
-                    in_small_resources=SMALL_RESOURCES
-            }
-            call runDeepVariant as callDeepVariantPaternal {
-                input:
-                    in_sample_name=PATERNAL_NAME,
-                    in_bam_file=paternal_indel_realigned_bam,
-                    in_bam_file_index=paternal_indel_realigned_bam_index,
-                    in_reference_file=reference_file,
-                    in_reference_index_file=REF_INDEX_FILE,
-                    in_model=DEEPVAR_MODEL,
-                    in_small_resources=SMALL_RESOURCES
-            }
             call runDeepVariantMakeExamples as callDeepVariantMakeExamplesChild {
                 input:
                     in_sample_name=SAMPLE_NAME,
-                    in_bam_file=child_indel_realigned_bam,
-                    in_bam_file_index=child_indel_realigned_bam_index,
+                    in_bam_file=child_bam_file,
+                    in_bam_file_index=child_bam_file_index,
                     in_reference_file=reference_file,
                     in_reference_index_file=reference_index_file,
                     in_min_mapq=MIN_MAPQ,
@@ -289,8 +268,8 @@ workflow vgGiraffeDeeptrio {
             call runDeepVariantMakeExamples as callDeepVariantMakeExamplesMaternal {
                 input:
                     in_sample_name=MATERNAL_NAME,
-                    in_bam_file=maternal_indel_realigned_bam,
-                    in_bam_file_index=maternal_indel_realigned_bam_index,
+                    in_bam_file=maternal_bam_file,
+                    in_bam_file_index=maternal_bam_file_index,
                     in_reference_file=reference_file,
                     in_reference_index_file=reference_index_file,
                     in_min_mapq=MIN_MAPQ,
@@ -317,8 +296,8 @@ workflow vgGiraffeDeeptrio {
             call runDeepVariantMakeExamples as callDeepVariantMakeExamplesPaternal {
                 input:
                     in_sample_name=PATERNAL_NAME,
-                    in_bam_file=paternal_indel_realigned_bam,
-                    in_bam_file_index=paternal_indel_realigned_bam_index,
+                    in_bam_file=paternal_bam_file,
+                    in_bam_file_index=paternal_bam_file_index,
                     in_reference_file=reference_file,
                     in_reference_index_file=reference_index_file,
                     in_min_mapq=MIN_MAPQ,
@@ -347,14 +326,14 @@ workflow vgGiraffeDeeptrio {
             call runDeepTrioMakeExamples {
                 input:
                     in_child_name=SAMPLE_NAME,
-                    in_maternal_name=SAMPLE_NAME_MATERNAL,
-                    in_paternal_name=SAMPLE_NAME_PATERNAL,
-                    in_child_bam_file=child_indel_realigned_bam,
-                    in_child_bam_file_index=child_indel_realigned_bam_index,
-                    in_maternal_bam_file=maternal_indel_realigned_bam,
-                    in_maternal_bam_file_index=maternal_indel_realigned_bam_index,
-                    in_paternal_bam_file=paternal_indel_realigned_bam,
-                    in_paternal_bam_file_index=paternal_indel_realigned_bam_index,
+                    in_maternal_name=MATERNAL_NAME,
+                    in_paternal_name=PATERNAL_NAME,
+                    in_child_bam_file=child_bam_file,
+                    in_child_bam_file_index=child_bam_file_index,
+                    in_maternal_bam_file=maternal_bam_file,
+                    in_maternal_bam_file_index=maternal_bam_file_index,
+                    in_paternal_bam_file=paternal_bam_file,
+                    in_paternal_bam_file_index=paternal_bam_file_index,
                     in_reference_file=reference_file,
                     in_reference_index_file=reference_index_file,
                     in_min_mapq=MIN_MAPQ,
@@ -370,8 +349,8 @@ workflow vgGiraffeDeeptrio {
                     in_sample_type="child",
                     in_reference_file=reference_file,
                     in_reference_index_file=reference_index_file,
-                    in_examples_file=runDeepTrioMakeExamples.examples_file,
-                    in_nonvariant_site_tf_file=runDeepVariantMakeExamples.nonvariant_site_tf_file,
+                    in_examples_file=runDeepTrioMakeExamples.child_examples_file,
+                    in_nonvariant_site_tf_file=runDeepTrioMakeExamples.child_nonvariant_site_tf_file,
                     in_model_meta_file=CHILD_DT_MODEL_META,
                     in_model_index_file=CHILD_DT_MODEL_INDEX,
                     in_model_data_file=CHILD_DT_MODEL_DATA,
@@ -381,10 +360,10 @@ workflow vgGiraffeDeeptrio {
             }
             call runDeepTrioCallVariants as callVariantsMaternal {
                 input:
-                    in_sample_name=SAMPLE_NAME_MATERNAL,
+                    in_sample_name=MATERNAL_NAME,
                     in_sample_type="parent2",
                     in_reference_file=reference_file,
-                    in_reference_index_file=REF_INDEX_FILE,
+                    in_reference_index_file=reference_index_file,
                     in_examples_file=runDeepTrioMakeExamples.maternal_examples_file,
                     in_nonvariant_site_tf_file=runDeepTrioMakeExamples.maternal_nonvariant_site_tf_file,
                     in_model_meta_file=PARENT_DT_MODEL_META,
@@ -396,10 +375,10 @@ workflow vgGiraffeDeeptrio {
             }
             call runDeepTrioCallVariants as callVariantsPaternal {
                 input:
-                    in_sample_name=SAMPLE_NAME_PATERNAL,
+                    in_sample_name=PATERNAL_NAME,
                     in_sample_type="parent1",
                     in_reference_file=reference_file,
-                    in_reference_index_file=REF_INDEX_FILE,
+                    in_reference_index_file=reference_index_file,
                     in_examples_file=runDeepTrioMakeExamples.paternal_examples_file,
                     in_nonvariant_site_tf_file=runDeepTrioMakeExamples.paternal_nonvariant_site_tf_file,
                     in_model_meta_file=PARENT_DT_MODEL_META,
@@ -411,15 +390,16 @@ workflow vgGiraffeDeeptrio {
             }
         }
     }
-    Array[File] childDeepVarGVCF = select_all(callDeepVariantChild.output_gvcf_file)
-    Array[File] childDeepTrioGVCF = select_all(callDeepVariantCallVariantsChild.output_gvcf_file)
+    Array[File] childDeepVarGVCF = select_all(callDeepVariantCallVariantsChild.output_gvcf_file)
+    Array[File] childDeepTrioGVCF = select_all(callVariantsChild.output_gvcf_file)
     Array[File] child_contig_gvcf_output_list = select_all(flatten([childDeepTrioGVCF, childDeepVarGVCF]))
     # Merge distributed variant called VCFs
     call concatClippedVCFChunks as concatVCFChunksChild {
         input:
             in_sample_name=SAMPLE_NAME,
             in_clipped_vcf_chunk_files=child_contig_gvcf_output_list,
-            in_small_resources=SMALL_RESOURCES
+            in_call_disk=CALL_DISK,
+            in_call_mem=CALL_MEM
     }
     # Extract either the normal or structural variant based VCFs and compress them
     call bgzipMergedVCF as bgzipVGCalledChildVCF {
@@ -427,7 +407,8 @@ workflow vgGiraffeDeeptrio {
             in_sample_name=SAMPLE_NAME,
             in_merged_vcf_file=concatVCFChunksChild.output_merged_vcf,
             in_vg_container=VG_CONTAINER,
-            in_small_resources=SMALL_RESOURCES
+            in_call_disk=CALL_DISK,
+            in_call_mem=CALL_MEM
     }
     Array[File] maDeepVarGVCF = select_all(callDeepVariantCallVariantsMaternal.output_gvcf_file)
     Array[File] maDeepTrioGVCF = select_all(callVariantsMaternal.output_gvcf_file)
@@ -435,17 +416,19 @@ workflow vgGiraffeDeeptrio {
     # Merge distributed variant called VCFs
     call concatClippedVCFChunks as concatVCFChunksMaternal {
         input:
-            in_sample_name=SAMPLE_NAME_MATERNAL,
+            in_sample_name=MATERNAL_NAME,
             in_clipped_vcf_chunk_files=maternal_contig_gvcf_output_list,
-            in_small_resources=SMALL_RESOURCES
+            in_call_disk=CALL_DISK,
+            in_call_mem=CALL_MEM
     }
     # Extract either the normal or structural variant based VCFs and compress them
     call bgzipMergedVCF as bgzipVGCalledMaternalVCF {
         input:
-            in_sample_name=SAMPLE_NAME_MATERNAL,
+            in_sample_name=MATERNAL_NAME,
             in_merged_vcf_file=concatVCFChunksMaternal.output_merged_vcf,
             in_vg_container=VG_CONTAINER,
-            in_small_resources=SMALL_RESOURCES
+            in_call_disk=CALL_DISK,
+            in_call_mem=CALL_MEM
     }
     Array[File] paDeepVarGVCF = select_all(callDeepVariantCallVariantsPaternal.output_gvcf_file)
     Array[File] paDeepTrioGVCF = select_all(callVariantsPaternal.output_gvcf_file)
@@ -453,19 +436,20 @@ workflow vgGiraffeDeeptrio {
     # Merge distributed variant called VCFs
     call concatClippedVCFChunks as concatVCFChunksPaternal {
         input:
-            in_sample_name=SAMPLE_NAME_PATERNAL,
+            in_sample_name=PATERNAL_NAME,
             in_clipped_vcf_chunk_files=paternal_contig_gvcf_output_list,
-            in_small_resources=SMALL_RESOURCES
+            in_call_disk=CALL_DISK,
+            in_call_mem=CALL_MEM
     }
     # Extract either the normal or structural variant based VCFs and compress them
     call bgzipMergedVCF as bgzipVGCalledPaternalVCF {
         input:
-            in_sample_name=SAMPLE_NAME_PATERNAL,
+            in_sample_name=PATERNAL_NAME,
             in_merged_vcf_file=concatVCFChunksPaternal.output_merged_vcf,
             in_vg_container=VG_CONTAINER,
-            in_small_resources=SMALL_RESOURCES
+            in_call_disk=CALL_DISK,
+            in_call_mem=CALL_MEM
     }
-    # TODO FINISH WRAPPING THIS PART UP
     if (defined(TRUTH_VCF) && defined(TRUTH_VCF_INDEX)) {
     
         # To evaluate the VCF we need a template of the reference
@@ -477,8 +461,8 @@ workflow vgGiraffeDeeptrio {
         # Direct vcfeval comparison makes an archive with FP and FN VCFs
         call compareCalls {
             input:
-                in_sample_vcf_file=bgzipMergedVCF.output_merged_vcf,
-                in_sample_vcf_index_file=bgzipMergedVCF.output_merged_vcf_index,
+                in_sample_vcf_file=bgzipVGCalledChildVCF.output_merged_vcf,
+                in_sample_vcf_index_file=bgzipVGCalledChildVCF.output_merged_vcf_index,
                 in_truth_vcf_file=select_first([TRUTH_VCF]),
                 in_truth_vcf_index_file=select_first([TRUTH_VCF_INDEX]),
                 in_template_archive=buildReferenceTemplate.output_template_archive,
@@ -490,8 +474,8 @@ workflow vgGiraffeDeeptrio {
         # Hap.py comparison makes accuracy results stratified by SNPs and indels
         call compareCallsHappy {
             input:
-                in_sample_vcf_file=bgzipMergedVCF.output_merged_vcf,
-                in_sample_vcf_index_file=bgzipMergedVCF.output_merged_vcf_index,
+                in_sample_vcf_file=bgzipVGCalledChildVCF.output_merged_vcf,
+                in_sample_vcf_index_file=bgzipVGCalledChildVCF.output_merged_vcf_index,
                 in_truth_vcf_file=select_first([TRUTH_VCF]),
                 in_truth_vcf_index_file=select_first([TRUTH_VCF_INDEX]),
                 in_reference_file=reference_file,
@@ -505,10 +489,10 @@ workflow vgGiraffeDeeptrio {
     output {
         File? output_vcfeval_evaluation_archive = compareCalls.output_evaluation_archive
         File? output_happy_evaluation_archive = compareCallsHappy.output_evaluation_archive
-        File output_vcf = bgzipMergedVCF.output_merged_vcf
-        File output_vcf_index = bgzipMergedVCF.output_merged_vcf_index
-        Array[File] output_calling_bams = calling_bam
-        Array[File] output_calling_bam_indexes = calling_bam_index
+        File output_vcf = bgzipVGCalledChildVCF.output_merged_vcf
+        File output_vcf_index = bgzipVGCalledChildVCF.output_merged_vcf_index
+        Array[File] output_calling_bams = childMapWorkflow.output_calling_bams
+        Array[File] output_calling_bam_indexes = childMapWorkflow.output_calling_bam_indexes
     }   
 }
 
@@ -1516,10 +1500,12 @@ task runDeepTrioMakeExamples {
         ln -s ~{in_maternal_bam_file_index} input_bam_file.maternal.bam.bai
         ln -s ~{in_paternal_bam_file} input_bam_file.paternal.bam
         ln -s ~{in_paternal_bam_file_index} input_bam_file.paternal.bam.bai
-        gzip -dc ~{in_reference_file} > ref.fna
+        ln -f -s ~{in_reference_file} ref.fna
         ln -f -s ~{in_reference_index_file} ref.fna.fai
-        CONTIG_ID=($(ls ~{in_child_bam_file} | rev | cut -f1 -d'/' | rev | sed s/^~{in_child_name}.//g | sed s/.indel_realigned.bam$//g))
-        
+        # Files may or may not be indel realigned or left shifted in the names.
+        # TODO: move tracking of contig ID to WDL variables!
+        CONTIG_ID=($(ls ~{in_child_bam_file} | rev | cut -f1 -d'/' | rev | sed s/^~{in_child_name}.//g | sed s/.bam$//g | sed s/.indel_realigned$//g | sed s/.left_shifted$//g))
+        echo ${CONTIG_ID}
         NORM_READS_ARG=""
         if [ ~{in_norm_reads} == true ]; then
           NORM_READS_ARG="--normalize_reads"
@@ -1533,7 +1519,7 @@ task runDeepTrioMakeExamples {
         seq 0 $((~{in_call_cores}-1)) | \
         parallel -q --halt 2 --line-buffer /opt/deepvariant/bin/deeptrio/make_examples \
         --mode calling \
-        --ref ref.fna \ 
+        --ref ref.fna \
         --reads_parent1 input_bam_file.paternal.bam \
         --reads_parent2 input_bam_file.maternal.bam \
         --reads input_bam_file.child.bam \
@@ -1542,12 +1528,12 @@ task runDeepTrioMakeExamples {
         --sample_name_parent1 ~{in_paternal_name} \
         --sample_name_parent2 ~{in_maternal_name} \
         --gvcf ./gvcf.tfrecord@~{in_call_cores}.gz \
-        --pileup_image_height_child 60 \
-        --pileup_image_height_parent 40 \
         --min_mapping_quality ~{in_min_mapq} \
         ${KEEP_LEGACY_AC_ARG} ${NORM_READS_ARG} \
         --regions ${CONTIG_ID} \
         --task {} 
+        #--pileup_image_height_child 60 \
+        #--pileup_image_height_parent 40 \
         ls | grep 'make_examples_child.tfrecord-' | tar -czf 'make_examples_child.tfrecord.tar.gz' -T -
         ls | grep 'make_examples_parent1.tfrecord-' | tar -czf 'make_examples_parent1.tfrecord.tar.gz' -T -
         ls | grep 'make_examples_parent2.tfrecord-' | tar -czf 'make_examples_parent2.tfrecord.tar.gz' -T -
@@ -1602,7 +1588,7 @@ task runDeepTrioCallVariants {
         #to turn off echo do 'set +o xtrace'
         tar -xzf ~{in_examples_file}
         tar -xzf ~{in_nonvariant_site_tf_file}
-        gzip -dc ~{in_reference_file} > reference.fa
+        ln -f -s ~{in_reference_file} reference.fa
         ln -f -s ~{in_reference_index_file} reference.fa.fai
         # We should use an array here, but that doesn't seem to work the way I
         # usually do them (because of a set -u maybe?)
@@ -1625,11 +1611,11 @@ task runDeepTrioCallVariants {
         
         # Define expected examples and nonvariant site tensor flow files 
         if [ ~{in_sample_type} == "child" ]; then
-            EXAMPLES_FILE="make_examples_child.tfrecord@~{in_vgcall_cores}.gz"
-            NONVARIANT_SITE_FILE="gvcf_child.tfrecord@~{in_vgcall_cores}.gz"
+            EXAMPLES_FILE="make_examples_child.tfrecord@~{in_call_cores}.gz"
+            NONVARIANT_SITE_FILE="gvcf_child.tfrecord@~{in_call_cores}.gz"
         else
-            EXAMPLES_FILE="make_examples_~{in_sample_type}.tfrecord@~{in_vgcall_cores}.gz"
-            NONVARIANT_SITE_FILE="gvcf_~{in_sample_type}.tfrecord@~{in_vgcall_cores}.gz"
+            EXAMPLES_FILE="make_examples_~{in_sample_type}.tfrecord@~{in_call_cores}.gz"
+            NONVARIANT_SITE_FILE="gvcf_~{in_sample_type}.tfrecord@~{in_call_cores}.gz"
         fi
         
         /opt/deepvariant/bin/call_variants \

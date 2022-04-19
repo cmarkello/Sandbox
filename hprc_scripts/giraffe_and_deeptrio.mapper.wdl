@@ -14,7 +14,7 @@ workflow vgGiraffeMap {
         String VG_CONTAINER = "quay.io/vgteam/vg:v1.36.0"
         Int READS_PER_CHUNK = 20000000                  # Number of reads contained in each mapping chunk (20000000 for wgs)
         String? GIRAFFE_OPTIONS                         # (OPTIONAL) extra command line options for Giraffe mapper
-        File? PATH_LIST_FILE                            # (OPTIONAL) Text file where each line is a path name in the XG index, to use instead of CONTIGS. If neither is given, paths are extracted from the XG and subset to chromosome-looking paths.
+        File PATH_LIST_FILE                             # Text file where each line is a path name in the XG index, to use instead of CONTIGS. If neither is given, paths are extracted from the XG and subset to chromosome-looking paths.
         String REFERENCE_PREFIX = ""                    # Remove this off the beginning of path names in surjected BAM (set to match prefix in PATH_LIST_FILE)
         File XG_FILE                                    # Path to .xg index file
         File GBWT_FILE                                  # Path to .gbwt index file
@@ -29,6 +29,9 @@ workflow vgGiraffeMap {
         Int MAP_CORES = 16
         Int MAP_DISK = 10
         Int MAP_MEM = 50
+        Int CALL_CORES = 8
+        Int CALL_DISK = 40
+        Int CALL_MEM = 50
         File? REFERENCE_FILE
         File? REFERENCE_INDEX_FILE
         File? REFERENCE_DICT_FILE
@@ -54,38 +57,13 @@ workflow vgGiraffeMap {
             in_split_read_disk=SPLIT_READ_DISK
     }
 
-    # Which path names to work on?
-    if (!defined(CONTIGS)) {
-        if (!defined(PATH_LIST_FILE)) {
-            # Extract path names to call against from xg file if PATH_LIST_FILE input not provided
-            # Filter down to major paths, because GRCh38 includes thousands of
-            # decoys and unplaced/unlocalized contigs, and we can't efficiently
-            # scatter across them, nor do we care about accuracy on them, and also
-            # calling on the decoys is semantically meaningless.
-            call extractSubsetPathNames {
-                input:
-                    in_xg_file=XG_FILE,
-                    in_vg_container=VG_CONTAINER,
-                    in_extract_disk=MAP_DISK,
-                    in_extract_mem=MAP_MEM
-            }
-        }
-    } 
-    if (defined(CONTIGS)) {
-        # Put the paths in a file to use later. We know the value is defined,
-        # but WDL is a bit low on unboxing calls for optionals so we use
-        # select_first.
-        File written_path_names_file = write_lines(select_first([CONTIGS]))
-    }
-    File pipeline_path_list_file = select_first([PATH_LIST_FILE, extractSubsetPathNames.output_path_list_file, written_path_names_file])
-    
     # To make sure that we have a FASTA reference with a contig set that
     # exactly matches the graph, we generate it ourselves, from the graph.
     if (!defined(REFERENCE_FILE)) {
         call extractReference {
             input:
                 in_xg_file=XG_FILE,
-                in_path_list_file=pipeline_path_list_file,
+                in_path_list_file=PATH_LIST_FILE,
                 in_vg_container=VG_CONTAINER,
                 in_extract_disk=MAP_DISK,
                 in_extract_mem=MAP_MEM
@@ -177,11 +155,11 @@ workflow vgGiraffeMap {
         # but fixBAMContigNaming above stripped them, so we don't need them downstream
         call fixPathNames {
             input:
-                in_path_file=pipeline_path_list_file,
+                in_path_file=PATH_LIST_FILE,
                 in_prefix_to_strip=REFERENCE_PREFIX,
         }
     }
-    File properly_named_path_list_file = select_first([fixPathNames.fixed_path_list_file, pipeline_path_list_file])
+    File properly_named_path_list_file = select_first([fixPathNames.fixed_path_list_file, PATH_LIST_FILE])
              
     # Split merged alignment by contigs list
     call splitBAMbyPath { 
@@ -859,13 +837,13 @@ task leftShiftBAMFile {
 
         # Reference and its index must be adjacent and not at arbitrary paths
         # the runner gives.
-        ln -f -s ~{in_reference_file} reference.fa
+        ln -f -s ~{in_reference_file} reference.fa.gz
         ln -f -s ~{in_reference_index_file} reference.fa.fai
         
         bamleftalign \
             <~{in_bam_file} \
             >~{in_sample_name}.${CONTIG_ID}.left_shifted.bam \
-            --fasta-reference reference.fa \
+            --fasta-reference reference.fa.gz \
             --compressed
     >>>
     output {
